@@ -9,6 +9,12 @@ import { noticeTypeLabel } from "@/components/notice-templates/constants";
 import { formatDateIST } from "@/lib/format-date";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types/database";
+import { RetryDeliveryButton } from "./retry-delivery-button";
+
+// Kept in sync with MAX_ATTEMPTS in src/app/api/notices/deliveries/[id]/retry/route.ts — that
+// route is the source of truth (it 400s past this), this just avoids showing a Retry button
+// that would immediately fail.
+const MAX_RETRY_ATTEMPTS = 3;
 
 export const metadata: Metadata = { title: "Notice History" };
 
@@ -106,6 +112,9 @@ export default async function NoticeHistoryPage({ params }: PageProps<"/cases/[i
                           <DeliveryStatusBadge status={d.status} />
                           {d.sent_at && (
                             <span className="text-muted-foreground">{formatDateIST(d.sent_at)}</span>
+                          )}
+                          {d.channel === "email" && d.status === "failed" && d.attempt_count < MAX_RETRY_ATTEMPTS && (
+                            <RetryDeliveryButton deliveryId={d.id} />
                           )}
                         </div>
                         <span className="text-muted-foreground">{d.recipient}</span>
