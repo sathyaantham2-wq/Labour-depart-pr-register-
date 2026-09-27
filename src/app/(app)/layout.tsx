@@ -1,21 +1,37 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { getCurrentProfile } from "@/lib/supabase/profile";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 // Screens are added here as they are built (see Screens tab of the plan).
-const NAV = [{ href: "/dashboard", label: "Dashboard" }];
+const NAV = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/cases", label: "Cases" },
+];
+
+// Admin-only screens (RBAC Matrix tab). Hidden for staff; RLS also blocks
+// writes at the database level regardless of what the UI shows.
+const ADMIN_NAV = [
+  { href: "/sections", label: "Sections" },
+  { href: "/received-from", label: "Received From" },
+  { href: "/staff", label: "Staff" },
+  { href: "/mis", label: "Monthly MIS" },
+];
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const profile = await getCurrentProfile();
+  const nav = profile?.role === "admin" ? [...NAV, ...ADMIN_NAV] : NAV;
 
   return (
     <div className="flex flex-1 flex-col md:flex-row">
       <aside className="border-b bg-muted/40 md:w-60 md:border-b-0 md:border-r">
         <div className="px-4 py-4 font-semibold">Labour Case Register</div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-3 md:flex-col md:pb-0">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}

@@ -224,6 +224,170 @@ export type Database = {
           },
         ];
       };
+      notice_deliveries: {
+        Row: {
+          attempt_count: number;
+          channel: string;
+          error: string | null;
+          id: string;
+          notice_id: string;
+          party_id: string;
+          provider_message_id: string | null;
+          recipient: string;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          attempt_count?: number;
+          channel: string;
+          error?: string | null;
+          id?: string;
+          notice_id: string;
+          party_id: string;
+          provider_message_id?: string | null;
+          recipient: string;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          attempt_count?: number;
+          channel?: string;
+          error?: string | null;
+          id?: string;
+          notice_id?: string;
+          party_id?: string;
+          provider_message_id?: string | null;
+          recipient?: string;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notice_deliveries_notice_id_fkey";
+            columns: ["notice_id"];
+            isOneToOne: false;
+            referencedRelation: "notices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notice_deliveries_party_id_fkey";
+            columns: ["party_id"];
+            isOneToOne: false;
+            referencedRelation: "parties";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      notice_templates: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          docx_path: string;
+          id: string;
+          language: string;
+          name: string;
+          notice_type: string;
+          updated_at: string;
+          whatsapp_template_name: string | null;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          docx_path: string;
+          id?: string;
+          language: string;
+          name: string;
+          notice_type: string;
+          updated_at?: string;
+          whatsapp_template_name?: string | null;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          docx_path?: string;
+          id?: string;
+          language?: string;
+          name?: string;
+          notice_type?: string;
+          updated_at?: string;
+          whatsapp_template_name?: string | null;
+        };
+        Relationships: [];
+      };
+      notices: {
+        Row: {
+          case_id: string;
+          created_at: string;
+          doc_path: string;
+          generated_at: string;
+          generated_by: string | null;
+          hearing_id: string | null;
+          id: string;
+          idempotency_key: string | null;
+          status: string;
+          template_id: string;
+          type: string;
+        };
+        Insert: {
+          case_id: string;
+          created_at?: string;
+          doc_path: string;
+          generated_at?: string;
+          generated_by?: string | null;
+          hearing_id?: string | null;
+          id?: string;
+          idempotency_key?: string | null;
+          status?: string;
+          template_id: string;
+          type: string;
+        };
+        Update: {
+          case_id?: string;
+          created_at?: string;
+          doc_path?: string;
+          generated_at?: string;
+          generated_by?: string | null;
+          hearing_id?: string | null;
+          id?: string;
+          idempotency_key?: string | null;
+          status?: string;
+          template_id?: string;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "notices_case_id_fkey";
+            columns: ["case_id"];
+            isOneToOne: false;
+            referencedRelation: "cases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notices_generated_by_fkey";
+            columns: ["generated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notices_hearing_id_fkey";
+            columns: ["hearing_id"];
+            isOneToOne: false;
+            referencedRelation: "hearings";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "notices_template_id_fkey";
+            columns: ["template_id"];
+            isOneToOne: false;
+            referencedRelation: "notice_templates";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       parties: {
         Row: {
           address: string | null;
@@ -387,12 +551,40 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      dashboard_stats: {
+        Row: {
+          act: string | null;
+          closed: number | null;
+          forwarded: number | null;
+          open: number | null;
+          section_id: string | null;
+          section_name: string | null;
+          total: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cases_section_id_fkey";
+            columns: ["section_id"];
+            isOneToOne: false;
+            referencedRelation: "sections";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
-      can_access_case: { Args: { p_case_id: string }; Returns: boolean };
-      is_active_user: { Args: Record<PropertyKey, never>; Returns: boolean };
-      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      monthly_mis: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          carried_forward: number;
+          closed: number;
+          month: string;
+          received: number;
+          section_id: string;
+          section_name: string;
+        }[];
+      };
+      recompute_notice_status: { Args: { p_notice_id: string }; Returns: undefined };
       refresh_next_hearing: { Args: { p_case_id: string }; Returns: undefined };
     };
     Enums: {
