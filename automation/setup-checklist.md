@@ -1,10 +1,15 @@
 # Automation Setup Checklist
 
-A concrete, ordered list of what **you** (not this agent — no live Make.com/WhatsApp/email
+A concrete, ordered list of what **you** (not this agent — no live Make.com/WhatsApp
 configuration was touched while producing these specs) need to click through once you have a
 WhatsApp Business API provider account. Cross-reference: `Labour_Portal_Full_Development_Plan.xlsx`
 Setup Checklist tab items 1–4, 12–14 cover the same ground at a higher level; this is the
 automation-specific detail under those items.
+
+> **Update (post-launch): email needs none of this.** Email is sent directly by the app via Resend
+> — set `RESEND_API_KEY` and `NOTICES_FROM_EMAIL` in `.env.local` / Vercel env, verify your sending
+> domain in the Resend dashboard, and it works with no Make.com account, connection, or scenario at
+> all. Everything below is WhatsApp-only.
 
 ## 0. Prerequisites (do these first if not already done — Setup Checklist tab items 1–3)
 
@@ -29,16 +34,14 @@ automation-specific detail under those items.
 ## 2. Create Make.com account and connections (Setup Checklist tab items 9, 12, 13)
 
 - [ ] Create a Make.com account; choose a plan against the operations estimate in
-      `automation/README.md` (start around ~3,000 ops/month for a light rollout, budget toward
-      ~11,000 ops/month if volume grows — check Make's current pricing tiers, they change).
+      `automation/README.md` (start around ~1,800 ops/month for a light rollout, budget toward
+      ~9,000 ops/month if volume grows — check Make's current pricing tiers, they change). This is
+      WhatsApp-only now, roughly half the original estimate.
 - [ ] **Make.com > Connections > Add** — connect your chosen WhatsApp provider (Gupshup / 360dialog
       / Twilio). If the provider isn't a native Make.com app, use a generic **HTTP with API key**
       connection instead (this is what the provided blueprint assumes — see
       `automation/README.md`'s note on generic HTTP modules).
-- [ ] **Make.com > Connections > Add** — connect an email-sending service (SendGrid, Postmark,
-      Resend, Amazon SES, etc.). Set up SPF/DKIM on your sending domain per that provider's
-      instructions (Setup Checklist tab item 13 flags this explicitly — without it, notice emails
-      are likely to land in spam).
+- [ ] No email connection needed here — see the update note at the top of this file.
 
 ## 3. Import the Scenario 1 blueprint
 
@@ -48,13 +51,14 @@ automation-specific detail under those items.
       Webhook in that dialog (Make.com generates the actual webhook URL at this point; it does not
       exist until you do this).
 - [ ] **Copy the generated webhook URL** — you'll paste it into the app's env vars in step 5.
-- [ ] Re-point the two `http:ActionSendData` "send" modules (Email and WhatsApp, under both the
-      Applicant and Management routes) at your actual provider's send-message endpoint and
-      connection, using the field mapping in `automation/scenario-1-immediate-notify.md`.
-- [ ] The Management-branch sub-routes were left empty in the blueprint file (to keep the file
-      readable) — copy/paste the Applicant branch's Email and WhatsApp sub-routes into the
-      Management branch and change `1.applicant.*` references to `1.management.*`. See the note in
-      that blueprint's `route 41` metadata.
+- [ ] Re-point the `http:ActionSendData` "send" module(s) (WhatsApp, under both the Applicant and
+      Management routes — there is no Email module any more, see the update note above) at your
+      actual provider's send-message endpoint and connection, using the field mapping in
+      `automation/scenario-1-immediate-notify.md`.
+- [ ] The Management-branch sub-route was left empty in the blueprint file (to keep the file
+      readable) — copy/paste the Applicant branch's WhatsApp sub-route into the Management branch
+      and change `1.applicant.*` references to `1.management.*`. See the note in that blueprint's
+      `route 41` metadata.
 - [ ] Build **Scenario 2** and **Scenario 3** from scratch in the Make.com UI following
       `automation/scenario-2-batch-notify.md` and `automation/scenario-3-retry-failed.md` — no
       blueprint file was produced for these two (they're simpler: schedule → HTTP → iterator, no
@@ -102,12 +106,19 @@ automation-specific detail under those items.
 
 - [ ] Generate one real notice for a test case with your own email/WhatsApp number as the
       party's contact details.
-- [ ] Confirm: email arrives, WhatsApp template message arrives, `notice_deliveries` rows show
-      `status = 'sent'` with a `provider_message_id`, and `notices.status` rolls up to `sent`.
-- [ ] Deliberately break something (e.g. temporarily wrong API key) and confirm a `failed` status
-      with a populated `error` column shows up, then fix it and confirm Scenario 3 successfully
-      retries it the next day (or trigger a manual test run of Scenario 3 in Make.com rather than
-      waiting for the 2 PM schedule).
+- [ ] Confirm **email** arrives — this happens the instant you generate the notice, independent of
+      anything below (no Make.com scenario involved). If `RESEND_API_KEY`/`NOTICES_FROM_EMAIL` are
+      already set in `.env.local`/Vercel, this part works today without any of the Make.com steps
+      above.
+- [ ] Confirm the WhatsApp template message arrives, `notice_deliveries` rows show `status =
+      'sent'` with a `provider_message_id` for the WhatsApp row, and `notices.status` rolls up to
+      `sent`.
+- [ ] Deliberately break something on the WhatsApp side (e.g. temporarily wrong API key) and
+      confirm a `failed` status with a populated `error` column shows up, then fix it and confirm
+      Scenario 3 successfully retries it the next day (or trigger a manual test run of Scenario 3
+      in Make.com rather than waiting for the 2 PM schedule). Email failures are not covered by
+      Scenario 3 (see that scenario's update note) — retry those by regenerating the notice, until
+      an app-level email retry exists.
 
 ## Open items this checklist cannot resolve for you
 

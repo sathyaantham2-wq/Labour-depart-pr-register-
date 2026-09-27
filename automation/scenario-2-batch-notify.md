@@ -3,6 +3,12 @@
 Source: Automation tab, row 6. Runs daily (e.g. 9:00 AM IST) and notifies both parties for every
 upcoming hearing that hasn't been notified yet.
 
+> **Update (post-launch):** this scenario still calls `POST /api/notices` exactly as designed below
+> — no change needed here. But that endpoint now sends email directly (Resend) and only fires the
+> Scenario 1 webhook for WhatsApp deliveries. So "notifies both parties" below means: email goes out
+> the moment this scenario calls the endpoint (synchronously, before it even responds), and WhatsApp
+> goes out via the Scenario 1 chain as before, if the notice has any WhatsApp deliveries.
+
 ## Trigger
 
 **Make.com: Schedule** module, daily, **09:00 Asia/Kolkata** (set the scenario's scheduling

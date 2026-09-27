@@ -3,6 +3,17 @@
 Source: Automation tab, row 7. Retries deliveries stuck at `status = 'failed'` up to 3 attempts,
 then escalates to the assigned officer for manual (postal/hand) service.
 
+> **Update (post-launch): this scenario is now WhatsApp-only.** Email is sent directly by the app
+> (Resend), not through Make.com, so Make.com has no send credentials or code path for email at
+> all and cannot retry a failed email delivery — reusing Scenario 1's (removed) email sub-route
+> here is no longer possible or correct. Failed **email** deliveries need a retry mechanism owned
+> by the app itself instead (not built as of this note — options: a small Supabase Edge Function
+> retrying via Resend directly, mirroring `supabase/functions/due-hearings/`, or a manual "Retry"
+> button on the Notice History screen calling a new endpoint that re-runs the same
+> `sendNoticeEmail()` call already in `src/app/api/notices/route.ts`). Steps 5 and 6 below are
+> updated for WhatsApp only; step 7's escalation logic still applies to whichever channel actually
+> failed 3 times, WhatsApp or email, once an email retry path exists.
+
 ## Trigger
 
 **Make.com: Schedule** module, daily **14:00 Asia/Kolkata** (per the tab's suggested cadence), OR a
@@ -14,14 +25,16 @@ manual **"Retry" button** in the app UI (out of scope for this agent — flagged
    daily.
 2. **HTTP module → Supabase** (via PostgREST, not a bespoke Edge Function — this query is a plain
    filtered select, not the multi-table "due" logic Scenario 2 needed, so a dedicated Edge Function
-   isn't justified here):
+   isn't justified here). **Filtered to `channel=eq.whatsapp`** — this scenario no longer touches
+   email deliveries at all (see the update note above):
    ```
    GET {SUPABASE_URL}/rest/v1/notice_deliveries
      ?status=eq.failed
      &attempt_count=lt.3
+     &channel=eq.whatsapp
      &select=id,notice_id,party_id,channel,recipient,attempt_count,
              notices(doc_path,type,case_id,hearing_id),
-             parties(name,email,whatsapp_phone,preferred_language)
+             parties(name,whatsapp_phone,preferred_language)
    ```
    Header `apikey` / `Authorization: Bearer <service_role key>` — **this call needs the Supabase
    service role key inside a Make.com HTTP module/connection, not a new endpoint in the Next.js
@@ -37,11 +50,12 @@ manual **"Retry" button** in the app UI (out of scope for this agent — flagged
    endpoint) with the same service-role auth, `{"expiresIn": 604800}` (7 days, matching the
    Automation tab's rules row). Do this **per delivery being retried**, not once — the whole point
    of retry is the original signed URL may have already expired.
-4. **Iterator** over the failed-deliveries array from step 2.
-5. **Router**, splitting on `channel` (`email` / `whatsapp`) — reuses the exact same
-   Email/WhatsApp HTTP modules and body mapping as Scenario 1 (steps under "Email sub-route" /
-   "WhatsApp sub-route" in `automation/scenario-1-immediate-notify.md`), pointed at the fresh
-   signed URL from step 3 instead of a payload-provided `doc_url`.
+4. **Iterator** over the failed-deliveries array from step 2 (all WhatsApp, per the filter above —
+   no Router needed to split by channel any more).
+5. **HTTP module** → the WhatsApp Business API provider's send-template-message endpoint, reusing
+   the exact same module and body mapping as Scenario 1's WhatsApp route (see
+   `automation/scenario-1-immediate-notify.md`), pointed at the fresh signed URL from step 3
+   instead of a payload-provided `doc_url`.
 6. **Writeback**: `POST {APP_BASE_URL}/api/deliveries/callback`, header `x-webhook-secret`, body
    `{delivery_id, status: "sent"|"failed", provider_message_id, error}`.
    **Recommendation to notice-api-engineer**: have the callback endpoint increment

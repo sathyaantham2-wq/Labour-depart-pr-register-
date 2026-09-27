@@ -4,6 +4,8 @@
 
 Internal web app for a Telangana Labour Department office: manage case files (EC / ID / S&E / …),
 track hearings, generate notices (DOCX), and notify applicant + management by Email and WhatsApp.
+Email is sent directly by the app (Resend) — no Make.com involved for that channel at all.
+WhatsApp still goes through Make.com, because Meta requires a Business API provider either way.
 
 ## Source of truth
 - `Labour_Portal_Full_Development_Plan.xlsx` (v2) — Roadmap, Screens, Data Model, RBAC Matrix,
@@ -37,8 +39,8 @@ track hearings, generate notices (DOCX), and notify applicant + management by Em
 |---|---|
 | `db-architect` | `supabase/` — schema, migrations, RLS, triggers, seed, data import |
 | `frontend-builder` | `src/app/**` pages & `src/components/**` — screens from the Screens tab |
-| `notice-api-engineer` | `src/app/api/**`, `src/lib/notices/**` — DOCX engine, storage, webhook, idempotency |
-| `automation-engineer` | `automation/**`, `supabase/functions/**` — Make.com scenarios, WhatsApp/Email, batch & retry |
+| `notice-api-engineer` | `src/app/api/**`, `src/lib/notices/**` — DOCX engine, storage, direct email send (Resend), WhatsApp webhook, idempotency |
+| `automation-engineer` | `automation/**`, `supabase/functions/**` — Make.com scenarios, WhatsApp only (not email), batch & retry |
 | `qa-security-reviewer` | `tests/**`, `supabase/tests/**` — tests, RLS verification, security reviews |
 
 Build order follows the Roadmap tab (Week 0 → Week 10). Update the Roadmap Status column only when

@@ -9,7 +9,8 @@ import {
   renderNoticeTemplate,
   TemplateRenderError,
 } from "@/lib/notices/render";
-import type { Tables, TablesInsert } from "@/types/database";
+import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
+import { sendNoticeEmail, noticeTypeLabel } from "@/lib/notices/email";
 
 export const runtime = "nodejs";
 
@@ -197,6 +198,7 @@ export async function POST(request: NextRequest) {
       {
         notice: existing,
         deliveries: existingDeliveries ?? [],
+        emailResults: [],
         idempotent: true,
         webhook: "skipped: a notice with this idempotency key already exists",
       },
@@ -340,15 +342,60 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // Step 6: signed URL + Make.com webhook. Automation isn't configured yet in
-  // most environments — that's not an error, the notice + deliveries above
-  // are already durably created with status 'pending'; we just say plainly
-  // that no send was attempted.
+  // Step 6: send email deliveries directly — no Make.com involved for this channel at all.
+  // WhatsApp still requires a Business API provider (Meta gives no other option), so it
+  // continues through the webhook below; email doesn't have that constraint, so it isn't
+  // made to wait on WhatsApp's approval process.
+  const emailDeliveries = (deliveries ?? []).filter((d) => d.channel === "email");
+  const emailResults: { party_id: string; recipient: string; status: "sent" | "failed"; error?: string }[] = [];
+
+  await Promise.all(
+    emailDeliveries.map(async (delivery) => {
+      const party = (parties ?? []).find((p) => p.id === delivery.party_id);
+      const sendResult = await sendNoticeEmail({
+        to: delivery.recipient,
+        recipientName: party?.name ?? "Sir/Madam",
+        caseFileNumber: caseRow.file_number,
+        noticeTypeLabel: noticeTypeLabel(input.notice_type),
+        attachment: { filename: `Notice-${caseRow.file_number.replace(/[^\w-]+/g, "_")}.docx`, content: renderedBuffer },
+      });
+
+      const update: TablesUpdate<"notice_deliveries"> = sendResult.ok
+        ? { status: "sent", provider_message_id: sendResult.providerMessageId, sent_at: new Date().toISOString(), attempt_count: 1 }
+        : { status: "failed", error: sendResult.error, attempt_count: 1 };
+
+      const { error: updateError } = await admin.from("notice_deliveries").update(update).eq("id", delivery.id);
+      if (updateError) {
+        console.error("notices route: failed to record email delivery result", updateError);
+      }
+      // Reflect the final state in the response payload we return below, instead of the
+      // just-inserted 'pending' row.
+      Object.assign(delivery, update);
+
+      emailResults.push({
+        party_id: delivery.party_id,
+        recipient: delivery.recipient,
+        status: sendResult.ok ? "sent" : "failed",
+        ...(sendResult.ok ? {} : { error: sendResult.error }),
+      });
+      if (!sendResult.ok) {
+        console.error("notices route: email send failed", { deliveryId: delivery.id, error: sendResult.error });
+      }
+    }),
+  );
+
+  // Step 7: signed URL + Make.com webhook — WhatsApp only, from here on. Skipped entirely if
+  // this notice has no WhatsApp deliveries (nothing for Make.com to do), and skipped (not an
+  // error) if automation isn't configured yet — the notice + deliveries above are already
+  // durably created either way; we just say plainly that no send was attempted for WhatsApp.
+  const whatsappDeliveries = (deliveries ?? []).filter((d) => d.channel === "whatsapp");
   let webhookStatus: string;
   const webhookUrl = process.env.MAKE_WEBHOOK_URL;
   const webhookSecret = process.env.MAKE_WEBHOOK_SECRET;
 
-  if (!webhookUrl) {
+  if (whatsappDeliveries.length === 0) {
+    webhookStatus = "skipped: no WhatsApp deliveries for this notice (email was sent directly)";
+  } else if (!webhookUrl) {
     webhookStatus = "skipped: MAKE_WEBHOOK_URL not configured";
   } else if (!webhookSecret) {
     webhookStatus = "skipped: MAKE_WEBHOOK_SECRET not configured";
@@ -364,17 +411,13 @@ export async function POST(request: NextRequest) {
       const management = (parties ?? []).find((p) => p.role === "management") ?? null;
 
       // Lets Make.com's writeback to /api/deliveries/callback pass delivery_id directly
-      // instead of reconstructing (notice_id, party_id, channel) itself.
-      function deliveryIdsFor(partyId: string): { email: { delivery_id: string } | null; whatsapp: { delivery_id: string } | null } {
-        const forParty = (deliveries ?? []).filter((d) => d.party_id === partyId);
-        return {
-          email: forParty.find((d) => d.channel === "email")
-            ? { delivery_id: forParty.find((d) => d.channel === "email")!.id }
-            : null,
-          whatsapp: forParty.find((d) => d.channel === "whatsapp")
-            ? { delivery_id: forParty.find((d) => d.channel === "whatsapp")!.id }
-            : null,
-        };
+      // instead of reconstructing (notice_id, party_id, channel) itself. Email is no longer
+      // included here — it was already sent (and its delivery row already updated) in Step 6
+      // above, before this webhook ever fires, so there is nothing left for Make.com to do
+      // with it.
+      function whatsappDeliveryIdFor(partyId: string): { delivery_id: string } | null {
+        const match = whatsappDeliveries.find((d) => d.party_id === partyId);
+        return match ? { delivery_id: match.id } : null;
       }
 
       // Extra context so Make.com can fill in email subjects and WhatsApp template
@@ -409,20 +452,18 @@ export async function POST(request: NextRequest) {
           ? {
               id: applicant.id,
               name: applicant.name,
-              email: applicant.email,
               whatsapp_phone: applicant.whatsapp_phone,
               preferred_language: applicant.preferred_language,
-              deliveries: deliveryIdsFor(applicant.id),
+              whatsapp_delivery: whatsappDeliveryIdFor(applicant.id),
             }
           : null,
         management: management
           ? {
               id: management.id,
               name: management.name,
-              email: management.email,
               whatsapp_phone: management.whatsapp_phone,
               preferred_language: management.preferred_language,
-              deliveries: deliveryIdsFor(management.id),
+              whatsapp_delivery: whatsappDeliveryIdFor(management.id),
             }
           : null,
         whatsapp_template_name: template.whatsapp_template_name,
@@ -448,6 +489,7 @@ export async function POST(request: NextRequest) {
       notice,
       deliveries: deliveries ?? [],
       skippedDeliveries,
+      emailResults,
       idempotent: false,
       webhook: webhookStatus,
     },
