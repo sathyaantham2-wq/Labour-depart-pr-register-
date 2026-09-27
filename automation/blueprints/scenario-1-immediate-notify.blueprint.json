@@ -1,0 +1,237 @@
+{
+  "name": "1. Immediate Notify (Labour Case Management)",
+  "flow": [
+    {
+      "id": 1,
+      "module": "gateway:CustomWebHook",
+      "version": 1,
+      "parameters": {
+        "hook": "REPLACE_WITH_YOUR_WEBHOOK_ID",
+        "maxResults": 1
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": { "x": 0, "y": 0 },
+        "restore": {
+          "parameters": {
+            "hook": {
+              "label": "labour-portal-immediate-notify (create this webhook first, then re-select it here)"
+            }
+          }
+        },
+        "parameters": [
+          { "name": "hook", "type": "hook:gateway-webhook", "label": "Webhook", "required": true }
+        ],
+        "note": "Create the webhook in Make.com (Webhooks > Add) BEFORE importing, or recreate this module after import and select your webhook. Data structure to attach: see automation/scenario-1-immediate-notify.md."
+      }
+    },
+    {
+      "id": 2,
+      "module": "builtin:BasicFeeder",
+      "version": 1,
+      "parameters": {},
+      "filter": {
+        "name": "Reject if secret header is wrong",
+        "conditions": [
+          [
+            {
+              "a": "{{1.headers.`x-webhook-secret`}}",
+              "b": "{{env.MAKE_WEBHOOK_SECRET}}",
+              "o": "text:equal"
+            }
+          ]
+        ]
+      },
+      "mapper": {},
+      "metadata": {
+        "designer": { "x": 300, "y": 0 },
+        "note": "Make.com scenario variables can't read process env directly — store the shared secret as a Make.com \"Data Store\"/scenario variable or hardcode it in this filter's right-hand side, never in plaintext exported blueprints you share. See setup-checklist.md step for where the secret is pasted."
+      }
+    },
+    {
+      "id": 3,
+      "module": "builtin:BasicRouter",
+      "version": 1,
+      "parameters": {},
+      "mapper": {},
+      "metadata": {
+        "designer": { "x": 600, "y": 0 },
+        "note": "Two routes: Applicant branch (route 3a) and Management branch (route 3b). Each route filters on the corresponding party object being non-null in the webhook payload (a case can technically have zero management parties recorded)."
+      },
+      "routes": [
+        {
+          "flow": [
+            {
+              "id": 10,
+              "module": "builtin:BasicFeeder",
+              "version": 1,
+              "filter": {
+                "name": "Applicant present",
+                "conditions": [[{ "a": "{{1.applicant}}", "o": "exist" }]]
+              },
+              "parameters": {},
+              "mapper": {},
+              "metadata": { "designer": { "x": 900, "y": -150 } }
+            },
+            {
+              "id": 11,
+              "module": "builtin:BasicRouter",
+              "version": 1,
+              "parameters": {},
+              "mapper": {},
+              "metadata": { "designer": { "x": 1200, "y": -150 } },
+              "routes": [
+                {
+                  "flow": [
+                    {
+                      "id": 20,
+                      "module": "builtin:BasicFeeder",
+                      "version": 1,
+                      "filter": {
+                        "name": "Applicant has email delivery row",
+                        "conditions": [[{ "a": "{{1.applicant.deliveries.email.delivery_id}}", "o": "exist" }]]
+                      },
+                      "parameters": {},
+                      "mapper": {},
+                      "metadata": { "designer": { "x": 1500, "y": -250 } }
+                    },
+                    {
+                      "id": 21,
+                      "module": "http:ActionSendData",
+                      "version": 3,
+                      "parameters": { "handleErrors": true, "useNewZLibDeCompress": true },
+                      "mapper": {
+                        "url": "{{env.EMAIL_PROVIDER_SEND_URL}}",
+                        "method": "post",
+                        "headers": [{ "name": "Authorization", "value": "Bearer {{connection.emailApiKey}}" }],
+                        "bodyType": "raw",
+                        "contentType": "application/json",
+                        "data": "{\"to\":\"{{1.applicant.email}}\",\"subject\":\"Hearing Notice — Case {{1.case.file_number}}\",\"html\":\"See attached notice: {{1.doc_url}}\"}"
+                      },
+                      "metadata": {
+                        "designer": { "x": 1800, "y": -250 },
+                        "note": "Generic HTTP module so this works with ANY email provider (SendGrid/Postmark/SES/etc) chosen later. Swap for a native Make email app module if preferred — the writeback module after it stays the same either way."
+                      }
+                    },
+                    {
+                      "id": 22,
+                      "module": "http:ActionSendData",
+                      "version": 3,
+                      "parameters": { "handleErrors": true },
+                      "mapper": {
+                        "url": "{{env.APP_BASE_URL}}/api/deliveries/callback",
+                        "method": "post",
+                        "headers": [{ "name": "x-webhook-secret", "value": "{{env.MAKE_WEBHOOK_SECRET}}" }],
+                        "bodyType": "raw",
+                        "contentType": "application/json",
+                        "data": "{\"delivery_id\":\"{{1.applicant.deliveries.email.delivery_id}}\",\"status\":\"{{if(22.success; \\\"sent\\\"; \\\"failed\\\")}}\",\"provider_message_id\":\"{{21.data.id}}\",\"error\":\"{{21.error.message}}\"}"
+                      },
+                      "metadata": {
+                        "designer": { "x": 2100, "y": -250 },
+                        "note": "Writeback to this app, not Make's own error handling — wrap module 21 in an error handler (Break/Resume) so a failed send still reaches this writeback with status=failed."
+                      }
+                    }
+                  ]
+                },
+                {
+                  "flow": [
+                    {
+                      "id": 30,
+                      "module": "builtin:BasicFeeder",
+                      "version": 1,
+                      "filter": {
+                        "name": "Applicant has whatsapp delivery row",
+                        "conditions": [[{ "a": "{{1.applicant.deliveries.whatsapp.delivery_id}}", "o": "exist" }]]
+                      },
+                      "parameters": {},
+                      "mapper": {},
+                      "metadata": { "designer": { "x": 1500, "y": -50 } }
+                    },
+                    {
+                      "id": 31,
+                      "module": "http:ActionSendData",
+                      "version": 3,
+                      "parameters": { "handleErrors": true },
+                      "mapper": {
+                        "url": "{{env.WHATSAPP_PROVIDER_SEND_URL}}",
+                        "method": "post",
+                        "headers": [{ "name": "Authorization", "value": "Bearer {{connection.whatsappApiKey}}" }],
+                        "bodyType": "raw",
+                        "contentType": "application/json",
+                        "data": "{\"to\":\"{{1.applicant.whatsapp_phone}}\",\"template\":\"{{1.whatsapp_template_name}}\",\"language\":\"{{1.applicant.preferred_language}}\",\"document_url\":\"{{1.doc_url}}\"}"
+                      },
+                      "metadata": {
+                        "designer": { "x": 1800, "y": -50 },
+                        "note": "Body shape is illustrative — the real payload depends on which BSP you pick (Gupshup / 360dialog / Twilio); see automation/scenario-1-immediate-notify.md for the field mapping to adapt per provider."
+                      }
+                    },
+                    {
+                      "id": 32,
+                      "module": "http:ActionSendData",
+                      "version": 3,
+                      "parameters": { "handleErrors": true },
+                      "mapper": {
+                        "url": "{{env.APP_BASE_URL}}/api/deliveries/callback",
+                        "method": "post",
+                        "headers": [{ "name": "x-webhook-secret", "value": "{{env.MAKE_WEBHOOK_SECRET}}" }],
+                        "bodyType": "raw",
+                        "contentType": "application/json",
+                        "data": "{\"delivery_id\":\"{{1.applicant.deliveries.whatsapp.delivery_id}}\",\"status\":\"{{if(32.success; \\\"sent\\\"; \\\"failed\\\")}}\",\"provider_message_id\":\"{{31.data.messageId}}\",\"error\":\"{{31.error.message}}\"}"
+                      },
+                      "metadata": { "designer": { "x": 2100, "y": -50 } }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "flow": [
+            {
+              "id": 40,
+              "module": "builtin:BasicFeeder",
+              "version": 1,
+              "filter": {
+                "name": "Management present",
+                "conditions": [[{ "a": "{{1.management}}", "o": "exist" }]]
+              },
+              "parameters": {},
+              "mapper": {},
+              "metadata": { "designer": { "x": 900, "y": 150 } }
+            },
+            {
+              "id": 41,
+              "module": "builtin:BasicRouter",
+              "version": 1,
+              "parameters": {},
+              "mapper": {},
+              "metadata": {
+                "designer": { "x": 1200, "y": 150 },
+                "note": "Mirror of route 3a (ids 20-22 / 30-32) but reading 1.management.* instead of 1.applicant.*. Duplicate modules 20-32 here in the Make.com UI (copy/paste route 3a's two sub-branches and repoint the mapper fields) — omitted verbatim in this file to keep it readable; the field mapping is identical."
+              },
+              "routes": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "instant": true,
+    "version": 1,
+    "scenario": {
+      "roundtrips": 1,
+      "maxErrors": 3,
+      "autoCommit": true,
+      "autoCommitTriggerLast": true,
+      "sequential": false,
+      "confidential": false,
+      "dataloss": false,
+      "dlq": false,
+      "freshVariables": false
+    },
+    "designer": { "orphans": [] },
+    "zone": "REPLACE_WITH_YOUR_MAKE_ZONE (e.g. eu1.make.com or us1.make.com)"
+  }
+}

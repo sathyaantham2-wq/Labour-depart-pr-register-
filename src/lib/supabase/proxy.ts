@@ -32,8 +32,14 @@ export async function updateSession(request: NextRequest) {
   const signedIn = Boolean(data?.claims);
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  // API routes are never redirected to /login: some are called by external services with no
+  // browser session at all (e.g. /api/deliveries/callback, authenticated via a shared secret
+  // header, not a cookie) — an HTML redirect there would silently break every such caller.
+  // Routes that do need a signed-in user (e.g. /api/notices) check the session themselves and
+  // return a proper 401 JSON response; the cookie refresh above still runs for them either way.
+  const isApi = pathname.startsWith("/api/");
 
-  if (!signedIn && !isPublic) {
+  if (!signedIn && !isPublic && !isApi) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = "";

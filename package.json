@@ -10,7 +10,8 @@
     "db:local:reset": "node scripts/db-local.mjs reset",
     "db:local:test": "node scripts/db-local.mjs test",
     "typecheck": "next typegen && tsc --noEmit",
-    "db:local:types": "node scripts/db-local.mjs types"
+    "db:local:types": "node scripts/db-local.mjs types",
+    "test": "vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
