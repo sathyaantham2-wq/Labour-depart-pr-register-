@@ -12,8 +12,13 @@ WhatsApp still goes through Make.com, because Meta requires a Business API provi
   Automation, Setup Checklist, Change Log. Read it with Python/openpyxl, e.g.
   `python -c "import openpyxl; ws=openpyxl.load_workbook('Labour_Portal_Full_Development_Plan.xlsx')['Data Model']; [print(r) for r in ws.iter_rows(values_only=True)]"`
 - `Labour_Portal_Full_Development_Plan_v1_backup.xlsx` is the old version — do not build from it.
-- Open decisions (Overview tab): staff MIS visibility, Telugu notices, PDF vs DOCX, single vs
-  multi-office file numbers, task owners. Do not silently decide these — stop and ask.
+- Open decisions (Overview tab): staff MIS visibility, PDF vs DOCX, single vs multi-office file
+  numbers, task owners. Do not silently decide these — stop and ask.
+- Telugu notices: **decided — yes.** Draft Telugu WhatsApp templates are in
+  `automation/whatsapp-templates.md`, but are AI-assisted and unreviewed — do not treat them as
+  final, and do not submit/send them until a native Telugu speaker on staff has checked them. The
+  real DOCX letterhead templates (Setup Checklist item 4) still need an English *and* Telugu
+  version once someone drafts the actual letterhead content.
 
 ## Stack & conventions
 - Next.js (App Router, TypeScript, `src/` dir), Tailwind CSS + shadcn/ui, hosted on Vercel.

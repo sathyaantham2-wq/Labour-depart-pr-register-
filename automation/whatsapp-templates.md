@@ -1,5 +1,10 @@
 # WhatsApp Message Templates (Meta / Business API)
 
+> **Status: English drafts are ready to submit. Telugu drafts exist but are AI-assisted and
+> unreviewed** — see the ⚠️ warning under each Telugu section. The "bilingual notices" open decision
+> (Overview tab) is answered as "yes, Telugu too," but submission/use of the Telugu text is blocked
+> until a native Telugu speaker on staff reviews it.
+
 Drafts for the four `notices.type` values (`hearing`, `show_cause`, `closure`, `order`). These are
 **business-initiated** messages, so per WhatsApp policy every one of them **must** be a
 Meta-approved template — free-text is not permitted outside a user-initiated 24-hour session
@@ -57,15 +62,30 @@ open-decisions rule.
 | Body variable examples | `{{1}}` Sri Ramesh Kumar · `{{2}}` EC/45/2026 · `{{3}}` Employees' Compensation Act · `{{4}}` 15-10-2026 · `{{5}}` 11:00 AM |
 | Footer | Office of the Labour Officer — this is an automated notice |
 
-### Telugu (`te`)
+### Telugu (`te`) — DRAFT, unreviewed
 
-**TBD — needs review by a Telugu speaker before submission to Meta.** Telugu notices are an open
-decision (Overview tab, item 2: "Are notices bilingual (Telugu + English)?"). Do not fill this row
-with a machine translation of the English body — a mistranslated statutory notice is a real harm to
-a party who may rely on it to know when/where to appear. Once the language decision is made and a
-Telugu speaker (ideally departmental staff, not this agent) reviews a translation, fill this row
-with the same table shape as above (category/header/body/variable examples/footer), and it can go
-to Meta for approval alongside the English version.
+> ⚠️ **AI-assisted draft translation. Not reviewed by a native Telugu speaker or anyone with legal/
+> administrative Telugu drafting experience. Do not submit to Meta or send to a real party until a
+> departmental staff member with strong Telugu has checked it line by line.** Specific things to
+> double-check: the legal term for "ex-parte proceedings" (kept as an English loanword in
+> parentheses below, which is common practice in Telugu legal notices, but confirm the department's
+> preferred phrasing), and the office designation in the footer (kept generic — substitute the
+> actual designated officer's title used in your notices).
+
+| Field | Value |
+|---|---|
+| Category | UTILITY |
+| Header | Document |
+| Body | `గౌరవనీయులైన {{1}} గారికి, కేసు {{2}} ({{3}})లో విచారణ తేదీ {{4}}, సమయం {{5}}గా నిర్ణయించబడినదని తెలియజేయడమైనది. పూర్తి వివరాల కోసం జతచేసిన నోటీసును పరిశీలించగలరు. వర్తించు నిబంధనల మేరకు హాజరుకానిచో ఏకపక్ష (ఎక్స్‌పార్టీ) చర్యలు చేపట్టబడే అవకాశం కలదు.` |
+| Body variable examples | `{{1}}` శ్రీ రమేష్ కుమార్ · `{{2}}` EC/45/2026 · `{{3}}` Employees' Compensation Act · `{{4}}` 15-10-2026 · `{{5}}` ఉదయం 11:00 గంటలకు |
+| Footer | కార్మిక శాఖ అధికారి కార్యాలయం — ఇది స్వయంచాలక నోటీసు |
+
+Notes on choices made: Act names (`{{3}}`) are kept in English even in the Telugu body — this
+mirrors how Indian regional-language legal notices conventionally cite an Act by its officially
+notified (English) short title rather than translating it, avoiding any ambiguity about which law
+is meant. Dates are left in the same `DD-MM-YYYY` format the app already produces (not translated
+to a different calendar or numeral style) since the actual value substituted at send time comes
+from `formatDateIST()`, unchanged regardless of template language.
 
 ---
 
@@ -83,9 +103,21 @@ to Meta for approval alongside the English version.
 | Body variable examples | `{{1}}` M/s ABC Enterprises · `{{2}}` ID/12/2026 · `{{3}}` Industrial Disputes Act · `{{4}}` 15 |
 | Footer | Office of the Labour Officer — this is an automated notice |
 
-### Telugu (`te`)
+### Telugu (`te`) — DRAFT, unreviewed
 
-**TBD — needs review by a Telugu speaker before submission to Meta.** Same caveat as above.
+> ⚠️ Same caveat as the hearing notice above — **not reviewed, do not submit or send until checked**
+> by a native Telugu speaker. Specific term to double-check: "show cause" (rendered below as
+> "కారణాలు తెలియజేయవలసినది" — literally "required to state reasons" — confirm this matches the
+> department's standard phrasing for a show-cause notice, if one already exists in other official
+> correspondence).
+
+| Field | Value |
+|---|---|
+| Category | UTILITY |
+| Header | Document |
+| Body | `గౌరవనీయులైన {{1}} గారికి, కేసు {{2}} ({{3}})కు సంబంధించి, ఈ నోటీసు తేదీ నుండి {{4}} రోజులలోపు లిఖితపూర్వకంగా కారణాలు తెలియజేయవలసినదిగా కోరడమైనది; తప్పినచో వర్తించు నిబంధనల మేరకు తదుపరి చర్యలు చేపట్టబడతాయి. పూర్తి వివరాల కోసం జతచేసిన నోటీసును పరిశీలించగలరు.` |
+| Body variable examples | `{{1}}` మె. ఎబిసి ఎంటర్‌ప్రైజెస్ · `{{2}}` ID/12/2026 · `{{3}}` Industrial Disputes Act · `{{4}}` 15 |
+| Footer | కార్మిక శాఖ అధికారి కార్యాలయం — ఇది స్వయంచాలక నోటీసు |
 
 ---
 
@@ -103,9 +135,17 @@ to Meta for approval alongside the English version.
 | Body variable examples | `{{1}}` Smt. Lakshmi Devi · `{{2}}` SE/78/2026 · `{{3}}` Shops & Establishments Act · `{{4}}` 20-09-2026 |
 | Footer | Office of the Labour Officer — this is an automated notice |
 
-### Telugu (`te`)
+### Telugu (`te`) — DRAFT, unreviewed
 
-**TBD — needs review by a Telugu speaker before submission to Meta.** Same caveat as above.
+> ⚠️ Same caveat — **not reviewed, do not submit or send until checked** by a native Telugu speaker.
+
+| Field | Value |
+|---|---|
+| Category | UTILITY |
+| Header | Document |
+| Body | `గౌరవనీయులైన {{1}} గారికి, కేసు {{2}} ({{3}}) {{4}} తేదీన మూసివేయబడినదని తెలియజేయడమైనది. మీ రికార్డుల కొరకు జతచేసిన మూసివేత ఉత్తర్వును పరిశీలించగలరు.` |
+| Body variable examples | `{{1}}` శ్రీమతి లక్ష్మీదేవి · `{{2}}` SE/78/2026 · `{{3}}` Shops & Establishments Act · `{{4}}` 20-09-2026 |
+| Footer | కార్మిక శాఖ అధికారి కార్యాలయం — ఇది స్వయంచాలక నోటీసు |
 
 ---
 
@@ -123,9 +163,20 @@ to Meta for approval alongside the English version.
 | Body variable examples | `{{1}}` Sri Ramesh Kumar · `{{2}}` EC/45/2026 · `{{3}}` Employees' Compensation Act · `{{4}}` 25-09-2026 |
 | Footer | Office of the Labour Officer — this is an automated notice |
 
-### Telugu (`te`)
+### Telugu (`te`) — DRAFT, unreviewed
 
-**TBD — needs review by a Telugu speaker before submission to Meta.** Same caveat as above.
+> ⚠️ Same caveat — **not reviewed, do not submit or send until checked** by a native Telugu speaker.
+> Specific term to double-check: "compliance" (rendered below as "అనుసరణ (కంప్లయెన్స్)" — a Telugu
+> gloss plus the English loanword in parentheses, a common pattern in Telugu administrative
+> writing for a term with no single settled Telugu equivalent — confirm the department's preference).
+
+| Field | Value |
+|---|---|
+| Category | UTILITY |
+| Header | Document |
+| Body | `గౌరవనీయులైన {{1}} గారికి, కేసు {{2}} ({{3}})లో {{4}} తేదీన ఉత్తర్వు జారీ చేయబడినది. పూర్తి వివరాల కోసం జతచేసిన ఉత్తర్వును పరిశీలించగలరు. ఈ ఉత్తర్వు ప్రకారం అవసరమైన అనుసరణ (కంప్లయెన్స్) చర్యలను అందులో పేర్కొన్న గడువులోపు పూర్తి చేయవలసి ఉంటుంది.` |
+| Body variable examples | `{{1}}` శ్రీ రమేష్ కుమార్ · `{{2}}` EC/45/2026 · `{{3}}` Employees' Compensation Act · `{{4}}` 25-09-2026 |
+| Footer | కార్మిక శాఖ అధికారి కార్యాలయం — ఇది స్వయంచాలక నోటీసు |
 
 ---
 
