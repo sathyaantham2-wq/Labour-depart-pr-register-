@@ -1,9 +1,8 @@
 # WhatsApp Message Templates (Meta / Business API)
 
-> **Status: English drafts are ready to submit. Telugu drafts exist but are AI-assisted and
-> unreviewed** — see the ⚠️ warning under each Telugu section. The "bilingual notices" open decision
-> (Overview tab) is answered as "yes, Telugu too," but submission/use of the Telugu text is blocked
-> until a native Telugu speaker on staff reviews it.
+> **Status: English only — decided.** The "bilingual notices" open decision (Overview tab) is
+> resolved as English-only; Telugu is not needed. The Telugu drafts below are kept for reference
+> only (they were AI-assisted and never reviewed) — do not build on them or activate them.
 
 Drafts for the four `notices.type` values (`hearing`, `show_cause`, `closure`, `order`). These are
 **business-initiated** messages, so per WhatsApp policy every one of them **must** be a
