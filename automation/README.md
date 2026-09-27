@@ -11,10 +11,12 @@ drafts for the Labour Case Management app's notification automation. Source of t
 | `scenario-1-immediate-notify.md` | Full spec — webhook fires on notice creation, sends WhatsApp to both parties, writes back per delivery. Email is sent directly by the app (Resend), not through this scenario — see the update note at the top of that file. |
 | `scenario-2-batch-notify.md` | Full spec — daily cron finds due hearings (via the Edge Function below) and creates+sends their notices. |
 | `scenario-3-retry-failed.md` | Full spec — daily cron retries failed deliveries (up to 3 attempts), escalates to the assigned officer on the 3rd failure. |
+| `scenario-4-admin-digest.md` | Full spec — **not a Make.com scenario**: a `pg_cron`-triggered Supabase Edge Function emailing an admin/head digest of the last 24h's notice activity directly via Resend, for the same reason party-notice email is out of Make.com. |
 | `whatsapp-templates.md` | Draft Meta WhatsApp templates (English filled in; Telugu marked TBD — see below). |
 | `setup-checklist.md` | Ordered, concrete steps for the user to click through once a WhatsApp provider is chosen. |
 | `blueprints/scenario-1-immediate-notify.blueprint.json` | Best-effort Make.com blueprint for Scenario 1 (see caveats in that file and below). |
 | `../supabase/functions/due-hearings/index.ts` | The Edge Function Scenario 2 calls to find due hearings. |
+| `../supabase/functions/admin-digest/index.ts` | The Edge Function Scenario 4 runs on a `pg_cron` schedule — queries `notices`/`notice_deliveries` and emails the digest via Resend directly. |
 
 ## Make.com operations estimate
 
