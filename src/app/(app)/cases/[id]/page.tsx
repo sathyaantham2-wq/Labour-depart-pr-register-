@@ -64,6 +64,9 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
           <Link href={`/cases/${id}/notice`} className={buttonVariants({ size: "sm" })}>
             Print Notice / Download DOCX
           </Link>
+          <Link href={`/cases/${id}/notices`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Notice History
+          </Link>
         </div>
       </div>
 

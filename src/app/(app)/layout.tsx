@@ -17,6 +17,7 @@ const ADMIN_NAV = [
   { href: "/received-from", label: "Received From" },
   { href: "/staff", label: "Staff" },
   { href: "/mis", label: "Monthly MIS" },
+  { href: "/notice-templates", label: "Notice Templates" },
 ];
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
