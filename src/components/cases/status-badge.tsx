@@ -7,7 +7,7 @@ import {
 } from "./constants";
 
 export function CaseStatusBadge({ status }: { status: string }) {
-  const variant = status === "open" ? "default" : status === "closed" ? "secondary" : "outline";
+  const variant = status === "open" ? "warning" : status === "closed" ? "success" : "outline";
   const label = CASE_STATUS_LABELS[status as CaseStatus] ?? status;
   return <Badge variant={variant}>{label}</Badge>;
 }
@@ -17,10 +17,10 @@ export function HearingStatusBadge({ status }: { status: string }) {
     status === "scheduled"
       ? "default"
       : status === "held"
-        ? "secondary"
+        ? "success"
         : status === "cancelled"
           ? "destructive"
-          : "outline";
+          : "warning";
   const label = HEARING_STATUS_LABELS[status as HearingStatus] ?? status;
   return <Badge variant={variant}>{label}</Badge>;
 }
