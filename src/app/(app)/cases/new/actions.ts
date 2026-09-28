@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createCaseSchema, type CreateCaseInput, type EntryPartyInput } from "../case-schema";
+import { toPhoneJson } from "@/components/cases/party-schema";
 import { createClient } from "@/lib/supabase/server";
 
 export type CreateCaseResult = { error?: string; fieldErrors?: Record<string, string> };
@@ -11,7 +12,7 @@ function partyInsert(caseId: string, role: "applicant" | "management", party: En
     case_id: caseId,
     role,
     name: (party.name ?? "").trim(),
-    phone: party.phone.map((p) => p.trim()).filter(Boolean),
+    phone: toPhoneJson(party.phone),
     whatsapp_phone: party.whatsapp_phone || null,
     email: party.email || null,
     address: party.address || null,

@@ -396,7 +396,7 @@ export type Database = {
           email: string | null;
           id: string;
           name: string;
-          phone: string[];
+          phone: NonNullable<Json>;
           preferred_language: string | null;
           role: string;
           updated_at: string;
@@ -409,7 +409,7 @@ export type Database = {
           email?: string | null;
           id?: string;
           name: string;
-          phone?: string[];
+          phone?: NonNullable<Json>;
           preferred_language?: string | null;
           role: string;
           updated_at?: string;
@@ -422,7 +422,7 @@ export type Database = {
           email?: string | null;
           id?: string;
           name?: string;
-          phone?: string[];
+          phone?: NonNullable<Json>;
           preferred_language?: string | null;
           role?: string;
           updated_at?: string;

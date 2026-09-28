@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HearingsSection } from "@/components/cases/hearings-section";
 import { PartyCard } from "@/components/cases/party-card";
+import { parsePhoneJson } from "@/components/cases/party-schema";
 import { RemarksSection } from "@/components/cases/remarks-section";
 import { CaseStatusBadge } from "@/components/cases/status-badge";
 import { CASE_STATUS_LABELS, type CaseStatus } from "@/components/cases/constants";
@@ -42,8 +43,10 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
 
   const sectionName = sections?.find((s) => s.id === caseRow.section_id)?.name ?? "—";
   const receivedFromName = receivedFrom?.find((r) => r.id === caseRow.received_from_id)?.name ?? "—";
-  const applicant = parties?.find((p) => p.role === "applicant") ?? null;
-  const management = parties?.find((p) => p.role === "management") ?? null;
+  const applicantRow = parties?.find((p) => p.role === "applicant") ?? null;
+  const managementRow = parties?.find((p) => p.role === "management") ?? null;
+  const applicant = applicantRow ? { ...applicantRow, phone: parsePhoneJson(applicantRow.phone) } : null;
+  const management = managementRow ? { ...managementRow, phone: parsePhoneJson(managementRow.phone) } : null;
   const statusLabel = CASE_STATUS_LABELS[caseRow.status as CaseStatus] ?? caseRow.status;
 
   return (

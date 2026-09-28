@@ -11,6 +11,7 @@ import {
 } from "@/lib/notices/render";
 import type { Tables, TablesInsert, TablesUpdate } from "@/types/database";
 import { sendNoticeEmail, noticeTypeLabel } from "@/lib/notices/email";
+import { parsePhoneJson } from "@/components/cases/party-schema";
 
 export const runtime = "nodejs";
 
@@ -271,7 +272,7 @@ export async function POST(request: NextRequest) {
       name: p.name,
       address: p.address,
       email: p.email,
-      phone: p.phone,
+      phone: parsePhoneJson(p.phone),
       whatsapp_phone: p.whatsapp_phone,
     })),
     hearing,

@@ -19,12 +19,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { upsertParty } from "@/app/(app)/cases/[id]/party-actions";
 import { PARTY_ROLE_LABELS, type PartyRole } from "./constants";
-import { partySchema } from "./party-schema";
+import { partySchema, toPhoneJson, type PhoneEntry } from "./party-schema";
 
 export type PartyRecord = {
   id: string;
   name: string;
-  phone: string[];
+  phone: PhoneEntry[];
   whatsapp_phone: string | null;
   email: string | null;
   address: string | null;
@@ -32,7 +32,7 @@ export type PartyRecord = {
 
 type FormValues = {
   name: string;
-  phone: { value: string }[];
+  phone: PhoneEntry[];
   whatsapp_phone: string;
   email: string;
   address: string;
@@ -41,7 +41,7 @@ type FormValues = {
 function toFormValues(party: PartyRecord | null): FormValues {
   return {
     name: party?.name ?? "",
-    phone: (party?.phone?.length ? party.phone : [""]).map((value) => ({ value })),
+    phone: party?.phone?.length ? party.phone : [{ name: "", phone: "" }],
     whatsapp_phone: party?.whatsapp_phone ?? "",
     email: party?.email ?? "",
     address: party?.address ?? "",
@@ -87,7 +87,7 @@ export function PartyForm({
       case_id: caseId,
       role,
       name: values.name,
-      phone: values.phone.map((p) => p.value.trim()).filter(Boolean),
+      phone: toPhoneJson(values.phone),
       whatsapp_phone: values.whatsapp_phone.trim(),
       email: values.email.trim(),
       address: values.address.trim(),
@@ -145,13 +145,14 @@ export function PartyForm({
             <div className="grid gap-2">
               {fields.map((field, index) => (
                 <div key={field.id} className="flex gap-2">
-                  <Input {...register(`phone.${index}.value`)} placeholder="10-digit or +91…" />
+                  <Input {...register(`phone.${index}.name`)} placeholder="Name" className="w-32 sm:w-40" />
+                  <Input {...register(`phone.${index}.phone`)} placeholder="Phone Number" />
                   <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
                     Remove
                   </Button>
                 </div>
               ))}
-              <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" })}>
+              <Button type="button" variant="outline" size="sm" onClick={() => append({ name: "", phone: "" })}>
                 Add phone number
               </Button>
             </div>

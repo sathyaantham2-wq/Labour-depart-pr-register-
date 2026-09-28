@@ -261,8 +261,16 @@ async function insertPartiesForBatch(
   // batch (duplicates within a submission are filtered out before we get here).
   const caseIdByFileNumber = new Map(inserted.map((c) => [c.file_number, c.id]));
 
-  const partyRows: { case_id: string; role: "applicant" | "management"; name: string; phone: string[]; email: string | null }[] =
-    [];
+  // Imported spreadsheets have one phone column per party (no per-number name column), so each
+  // becomes a single unnamed {phone} entry in the jsonb array — matches how the app stores a
+  // plain phone number when no name is given anywhere else in the UI.
+  const partyRows: {
+    case_id: string;
+    role: "applicant" | "management";
+    name: string;
+    phone: { phone: string }[];
+    email: string | null;
+  }[] = [];
   for (const row of rows) {
     const caseId = caseIdByFileNumber.get(row.file_number.trim());
     if (!caseId) continue;
@@ -271,7 +279,7 @@ async function insertPartiesForBatch(
         case_id: caseId,
         role: "applicant",
         name: row.applicant.name,
-        phone: row.applicant.phone ? [row.applicant.phone] : [],
+        phone: row.applicant.phone ? [{ phone: row.applicant.phone }] : [],
         email: row.applicant.email || null,
       });
     }
@@ -280,7 +288,7 @@ async function insertPartiesForBatch(
         case_id: caseId,
         role: "management",
         name: row.management.name,
-        phone: row.management.phone ? [row.management.phone] : [],
+        phone: row.management.phone ? [{ phone: row.management.phone }] : [],
         email: row.management.email || null,
       });
     }

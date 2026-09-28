@@ -1,14 +1,21 @@
 import { z } from "zod";
 import { CASE_STATUSES } from "@/components/cases/constants";
-import { WHATSAPP_PHONE_REGEX } from "@/components/cases/party-schema";
+import { phoneEntrySchema, WHATSAPP_PHONE_REGEX } from "@/components/cases/party-schema";
 
 // One block of party fields inline in the combined Create Current Entry form. Everything is
 // optional — the block only produces a `parties` row (in the Server Action) when a name is
 // given, so a case can be created with neither, either, or both parties filled in.
+const entryPhoneEntrySchema = phoneEntrySchema.extend({
+  // Same shape as the party edit dialog's phoneEntrySchema, but phone itself is allowed empty
+  // here (an inline row the user hasn't filled in yet) — filtered out before submit instead of
+  // erroring, since this whole block is optional row-by-row.
+  phone: z.string().trim(),
+});
+
 const entryPartySchema = z
   .object({
     name: z.string().trim().max(200).optional().or(z.literal("")),
-    phone: z.array(z.string().trim()).default([]),
+    phone: z.array(entryPhoneEntrySchema).default([]),
     whatsapp_phone: z
       .string()
       .trim()
@@ -20,7 +27,7 @@ const entryPartySchema = z
   })
   .superRefine((data, ctx) => {
     const hasOtherDetail =
-      data.phone.some((p) => p.trim()) || data.whatsapp_phone || data.email || data.address;
+      data.phone.some((p) => p.phone.trim()) || data.whatsapp_phone || data.email || data.address;
     if (hasOtherDetail && !data.name) {
       ctx.addIssue({ code: "custom", path: ["name"], message: "Enter a name." });
     }

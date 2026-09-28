@@ -16,10 +16,9 @@ import { createCase } from "./actions";
 
 type Lookup = { id: string; name: string };
 
-// RHF's own form state — distinct from CreateCaseInput (the Zod-validated submit shape).
-// Phone numbers are held as {value}[] here so useFieldArray has stable keys; mapped down to a
-// plain string[] in onSubmit before validating against createCaseSchema. Same split used in
-// components/cases/party-form.tsx for the same reason.
+// RHF's own form state — distinct from CreateCaseInput (the Zod-validated submit shape), so this
+// file doesn't need to change shape if the two ever drift; today they match exactly (each phone
+// entry is {name, phone}), so onSubmit passes values straight into createCaseSchema.safeParse.
 type CaseFormValues = {
   file_number: string;
   act: string;
@@ -55,11 +54,7 @@ const emptyValues: CaseFormValues = {
 };
 
 function toSubmitInput(values: CaseFormValues): CreateCaseInput {
-  return {
-    ...values,
-    applicant: { ...values.applicant, phone: values.applicant.phone.map((p) => p.value) },
-    management: { ...values.management, phone: values.management.phone.map((p) => p.value) },
-  };
+  return values;
 }
 
 export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; receivedFrom: Lookup[] }) {

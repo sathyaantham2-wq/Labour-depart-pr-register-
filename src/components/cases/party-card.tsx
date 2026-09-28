@@ -2,6 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PARTY_ROLE_LABELS, type PartyRole } from "./constants";
 import { PartyForm, type PartyRecord } from "./party-form";
 
+function formatPhones(phone: PartyRecord["phone"]): string {
+  if (!phone.length) return "—";
+  return phone.map((p) => (p.name ? `${p.name}: ${p.phone}` : p.phone)).join(", ");
+}
+
 export function PartyCard({
   caseId,
   role,
@@ -25,7 +30,7 @@ export function PartyCard({
         ) : (
           <dl className="grid gap-2 text-sm">
             <Row label="Name" value={party.name} />
-            <Row label="Phone" value={party.phone.length ? party.phone.join(", ") : "—"} />
+            <Row label="Phone" value={formatPhones(party.phone)} />
             <Row label="WhatsApp" value={party.whatsapp_phone ?? "—"} />
             <Row label="Email" value={party.email ?? "—"} />
             <Row label="Address" value={party.address ?? "—"} />

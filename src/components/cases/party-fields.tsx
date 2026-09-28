@@ -7,19 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PARTY_ROLE_LABELS, type PartyRole } from "./constants";
 
-// Shared Name / Phone numbers / WhatsApp / Email / Address block, used inline in the combined
-// Create Current Entry form. (The existing per-party edit dialog on the Case Details page,
-// PartyForm, has its own copy of this same shape — left as-is since it's already shipped and
-// tested; this component is for new form surfaces, not a retrofit of that one.)
-//
-// Phone numbers are a simple repeatable list, no name attached to each entry — the tapace.com
-// reference shows a "Name" box next to each phone number, but nothing in this app's data model
-// needs a name-per-phone-number, and adding one would need a schema change. Flagged to the user;
-// happy to add it if actually wanted.
+// Shared Name / Phone numbers (each with its own optional name) / WhatsApp / Email / Address
+// block, used inline in the combined Create Current Entry form. (The existing per-party edit
+// dialog on the Case Details page, PartyForm, has its own copy of this same shape — left as-is
+// since it's already shipped and tested; this component is for new form surfaces, not a retrofit
+// of that one.)
 
 export type PartyFieldsValues = {
   name: string;
-  phone: { value: string }[];
+  phone: { name: string; phone: string }[];
   whatsapp_phone: string;
   email: string;
   address: string;
@@ -30,7 +26,7 @@ export type PartyFieldsValues = {
 export type PartyFieldsFormShape = { applicant: PartyFieldsValues; management: PartyFieldsValues };
 
 export function partyFieldsDefaults(): PartyFieldsValues {
-  return { name: "", phone: [{ value: "" }], whatsapp_phone: "", email: "", address: "" };
+  return { name: "", phone: [{ name: "", phone: "" }], whatsapp_phone: "", email: "", address: "" };
 }
 
 export function PartyFields<TFormValues extends PartyFieldsFormShape>({
@@ -62,7 +58,12 @@ export function PartyFields<TFormValues extends PartyFieldsFormShape>({
         <div className="grid gap-2">
           {fields.map((field, index) => (
             <div key={field.id} className="flex gap-2">
-              <Input {...register(`${namePrefix}.phone.${index}.value` as never)} placeholder="10-digit or +91…" />
+              <Input
+                {...register(`${namePrefix}.phone.${index}.name` as never)}
+                placeholder="Name"
+                className="w-32 sm:w-40"
+              />
+              <Input {...register(`${namePrefix}.phone.${index}.phone` as never)} placeholder="Phone Number" />
               {fields.length > 1 && (
                 <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
                   Remove
@@ -70,7 +71,12 @@ export function PartyFields<TFormValues extends PartyFieldsFormShape>({
               )}
             </div>
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => append({ value: "" } as never)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => append({ name: "", phone: "" } as never)}
+          >
             Add phone number
           </Button>
         </div>

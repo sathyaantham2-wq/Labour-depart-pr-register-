@@ -27,7 +27,7 @@ describe("buildNoticeTemplateData", () => {
           name: "A. Kumar",
           address: "12 Market St",
           email: "a@example.com",
-          phone: ["9000000001"],
+          phone: [{ phone: "9000000001" }],
           whatsapp_phone: "9000000001",
         },
         {
@@ -72,6 +72,35 @@ describe("buildNoticeTemplateData", () => {
     });
     expect(data.hearing_date).toBeUndefined();
     expect(data.hearing_time).toBeUndefined();
+  });
+
+  it("joins multiple phone numbers, prefixing only the ones that have a name", () => {
+    const data = buildNoticeTemplateData({
+      caseFields: {
+        file_number: "EC/1/2026",
+        subject: "x",
+        act: "y",
+        memo_number: null,
+        received_date: "2026-01-01",
+        next_hearing_date: null,
+        office_code: "HYD-01",
+      },
+      parties: [
+        {
+          role: "applicant",
+          name: "A. Kumar",
+          address: null,
+          email: null,
+          phone: [
+            { name: "Son", phone: "9000000001" },
+            { phone: "9000000002" },
+          ],
+          whatsapp_phone: null,
+        },
+      ],
+      hearing: null,
+    });
+    expect(data.applicant_phone).toBe("Son: 9000000001, 9000000002");
   });
 });
 

@@ -125,7 +125,7 @@ export interface NoticePartyFields {
   name: string;
   address: string | null;
   email: string | null;
-  phone: string[];
+  phone: { name?: string; phone: string }[];
   whatsapp_phone: string | null;
 }
 
@@ -181,7 +181,9 @@ export function buildNoticeTemplateData(input: {
     data[`${role}_name`] = party.name;
     if (party.address) data[`${role}_address`] = party.address;
     if (party.email) data[`${role}_email`] = party.email;
-    if (party.phone.length > 0) data[`${role}_phone`] = party.phone.join(", ");
+    if (party.phone.length > 0) {
+      data[`${role}_phone`] = party.phone.map((p) => (p.name ? `${p.name}: ${p.phone}` : p.phone)).join(", ");
+    }
     if (party.whatsapp_phone) data[`${role}_whatsapp_phone`] = party.whatsapp_phone;
   }
 
