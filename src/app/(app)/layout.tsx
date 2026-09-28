@@ -1,38 +1,29 @@
 import { redirect } from "next/navigation";
-import {
-  LayoutDashboardIcon,
-  FolderKanbanIcon,
-  ListTreeIcon,
-  InboxIcon,
-  UsersIcon,
-  BarChart3Icon,
-  FileTextIcon,
-  ScrollTextIcon,
-  UploadIcon,
-  ScaleIcon,
-  LogOutIcon,
-} from "lucide-react";
+import { ScaleIcon, LogOutIcon } from "lucide-react";
 import { type NavItem, SidebarNav } from "@/components/layout/sidebar-nav";
 import { Button } from "@/components/ui/button";
 import { getCurrentProfile } from "@/lib/supabase/profile";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 // Screens are added here as they are built (see Screens tab of the plan).
+// Icons are looked up client-side in SidebarNav, keyed by href — a Server
+// Component can't pass icon component references as props to a Client
+// Component (React can't serialize functions across that boundary).
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboardIcon },
-  { href: "/cases", label: "Current Entries", icon: FolderKanbanIcon },
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/cases", label: "Current Entries" },
 ];
 
 // Admin-only screens (RBAC Matrix tab). Hidden for staff; RLS also blocks
 // writes at the database level regardless of what the UI shows.
 const ADMIN_NAV: NavItem[] = [
-  { href: "/sections", label: "Sections", icon: ListTreeIcon },
-  { href: "/received-from", label: "Received From", icon: InboxIcon },
-  { href: "/staff", label: "Staff", icon: UsersIcon },
-  { href: "/mis", label: "Monthly MIS", icon: BarChart3Icon },
-  { href: "/notice-templates", label: "Notice Templates", icon: FileTextIcon },
-  { href: "/audit-log", label: "Audit Log", icon: ScrollTextIcon },
-  { href: "/data-import", label: "Data Import", icon: UploadIcon },
+  { href: "/sections", label: "Sections" },
+  { href: "/received-from", label: "Received From" },
+  { href: "/staff", label: "Staff" },
+  { href: "/mis", label: "Monthly MIS" },
+  { href: "/notice-templates", label: "Notice Templates" },
+  { href: "/audit-log", label: "Audit Log" },
+  { href: "/data-import", label: "Data Import" },
 ];
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {

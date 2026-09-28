@@ -2,10 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import {
+  LayoutDashboardIcon,
+  FolderKanbanIcon,
+  ListTreeIcon,
+  InboxIcon,
+  UsersIcon,
+  BarChart3Icon,
+  FileTextIcon,
+  ScrollTextIcon,
+  UploadIcon,
+  CircleIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "cn";
 
-export type NavItem = { href: string; label: string; icon: LucideIcon };
+export type NavItem = { href: string; label: string };
+
+// Icon components can't cross the server/client boundary as props (React
+// Server Components can't serialize function references), so the lookup
+// lives entirely inside this client module, keyed by href.
+const ICONS: Record<string, LucideIcon> = {
+  "/dashboard": LayoutDashboardIcon,
+  "/cases": FolderKanbanIcon,
+  "/sections": ListTreeIcon,
+  "/received-from": InboxIcon,
+  "/staff": UsersIcon,
+  "/mis": BarChart3Icon,
+  "/notice-templates": FileTextIcon,
+  "/audit-log": ScrollTextIcon,
+  "/data-import": UploadIcon,
+};
 
 export function SidebarNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
@@ -14,7 +41,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
     <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:gap-0.5 md:pb-0">
       {items.map((item) => {
         const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-        const Icon = item.icon;
+        const Icon = ICONS[item.href] ?? CircleIcon;
         return (
           <Link
             key={item.href}
