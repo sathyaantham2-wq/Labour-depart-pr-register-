@@ -114,7 +114,7 @@ export async function checkExistingFileNumbers(fileNumbers: string[]): Promise<C
   return { ok: true, existing };
 }
 
-export type CommitPartyInput = { name: string; phone: string; email: string };
+export type CommitPartyInput = { name: string; phone: string; email: string; address: string };
 
 export type CommitRowInput = {
   rowNumber: number;
@@ -176,7 +176,7 @@ export async function commitImport(rows: CommitRowInput[]): Promise<CommitImport
   for (const row of rows) {
     const fileNumber = row.file_number.trim();
     const key = fileNumber.toLowerCase();
-    if (!fileNumber || !row.act.trim() || !ISO_DATE_RE.test(row.received_date)) {
+    if (!fileNumber || !ISO_DATE_RE.test(row.received_date)) {
       skipped.push({ rowNumber: row.rowNumber, file_number: fileNumber, reason: "Missing or invalid required field." });
       continue;
     }
@@ -192,7 +192,7 @@ export async function commitImport(rows: CommitRowInput[]): Promise<CommitImport
     const batch = sane.slice(i, i + BATCH_SIZE);
     const payload = batch.map((row) => ({
       file_number: row.file_number.trim(),
-      act: row.act.trim(),
+      act: row.act.trim() || null,
       received_date: row.received_date,
       subject: row.subject.trim(),
       memo_number: row.memo_number.trim() || null,
@@ -220,7 +220,7 @@ export async function commitImport(rows: CommitRowInput[]): Promise<CommitImport
         .from("cases")
         .insert({
           file_number: row.file_number.trim(),
-          act: row.act.trim(),
+          act: row.act.trim() || null,
           received_date: row.received_date,
           subject: row.subject.trim(),
           memo_number: row.memo_number.trim() || null,
@@ -270,6 +270,7 @@ async function insertPartiesForBatch(
     name: string;
     phone: { phone: string }[];
     email: string | null;
+    address: string | null;
   }[] = [];
   for (const row of rows) {
     const caseId = caseIdByFileNumber.get(row.file_number.trim());
@@ -281,6 +282,7 @@ async function insertPartiesForBatch(
         name: row.applicant.name,
         phone: row.applicant.phone ? [{ phone: row.applicant.phone }] : [],
         email: row.applicant.email || null,
+        address: row.applicant.address || null,
       });
     }
     if (row.management) {
@@ -290,6 +292,7 @@ async function insertPartiesForBatch(
         name: row.management.name,
         phone: row.management.phone ? [{ phone: row.management.phone }] : [],
         email: row.management.email || null,
+        address: row.management.address || null,
       });
     }
   }

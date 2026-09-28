@@ -368,7 +368,7 @@ export function ImportWizard({ sections, receivedFrom }: { sections: Lookup[]; r
 
             <div className="flex flex-wrap gap-2">
               <Link href="/cases" className={buttonVariants({})}>
-                Go to Case List
+                Go to Current Entries
               </Link>
               <Button type="button" variant="outline" onClick={resetAll}>
                 Import Another File

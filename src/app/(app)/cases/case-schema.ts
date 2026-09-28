@@ -39,7 +39,7 @@ const entryPartySchema = z
 // separately afterward on the case detail page, which remains possible too for later edits).
 export const createCaseSchema = z.object({
   file_number: z.string().trim().min(1, "Enter a file number.").max(100),
-  act: z.string().trim().min(1, "Enter the Act.").max(100),
+  act: z.string().trim().max(100).optional().or(z.literal("")),
   received_date: z.string().trim().min(1, "Enter the received date."),
   memo_number: z.string().trim().max(100).optional().or(z.literal("")),
   subject: z.string().trim().max(500).optional().or(z.literal("")),

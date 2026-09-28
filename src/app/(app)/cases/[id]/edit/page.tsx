@@ -4,7 +4,7 @@ import type { CaseStatus } from "@/components/cases/constants";
 import { createClient } from "@/lib/supabase/server";
 import { EditCaseForm } from "./edit-form";
 
-export const metadata: Metadata = { title: "Edit Case" };
+export const metadata: Metadata = { title: "Edit Entry" };
 
 export default async function EditCasePage({ params }: PageProps<"/cases/[id]/edit">) {
   const { id } = await params;
@@ -25,7 +25,7 @@ export default async function EditCasePage({ params }: PageProps<"/cases/[id]/ed
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Edit Case {caseRow.file_number}</h1>
+        <h1 className="text-2xl font-semibold">Edit Entry {caseRow.file_number}</h1>
       </div>
       <EditCaseForm
         caseId={caseRow.id}

@@ -70,7 +70,7 @@ export async function createCase(input: CreateCaseInput): Promise<CreateCaseResu
     .from("cases")
     .insert({
       file_number,
-      act,
+      act: act || null,
       received_date,
       memo_number: memo_number || null,
       subject: subject || "",

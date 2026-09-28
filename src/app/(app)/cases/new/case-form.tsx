@@ -118,8 +118,8 @@ export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; recei
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor="act">Act</Label>
-              <Input id="act" {...register("act")} placeholder="e.g. EC, ID, S&E" aria-invalid={!!errors.act} />
+              <Label htmlFor="act">Act (optional)</Label>
+              <Input id="act" {...register("act")} placeholder="e.g. EC, ID, S&E — leave blank if not tracked" aria-invalid={!!errors.act} />
               {errors.act && <p className="text-sm text-destructive">{errors.act.message}</p>}
             </div>
 

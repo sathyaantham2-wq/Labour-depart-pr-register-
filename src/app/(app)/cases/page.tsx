@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatDateIST } from "@/lib/format-date";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Cases" };
+export const metadata: Metadata = { title: "Current Entries" };
 
 const PAGE_SIZE = 20;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -73,13 +73,13 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Cases</h1>
+          <h1 className="text-2xl font-semibold">Current Entries</h1>
           <p className="text-muted-foreground">
-            Case files assigned to you. Use Advanced Filters to narrow the list.
+            Entries assigned to you. Use Advanced Filters to narrow the list.
           </p>
         </div>
         <Link href="/cases/new" className={buttonVariants({})}>
-          New Case
+          New Entry
         </Link>
       </div>
 

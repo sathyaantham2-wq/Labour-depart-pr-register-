@@ -186,9 +186,11 @@ describe("extractMappedRow", () => {
     applicant_name: null,
     applicant_phone: null,
     applicant_email: null,
+    applicant_address: null,
     management_name: null,
     management_phone: null,
     management_email: null,
+    management_address: null,
   };
 
   it("pulls values by header position and trims strings", () => {
@@ -224,9 +226,11 @@ describe("validateRows", () => {
       applicant_name: "",
       applicant_phone: "",
       applicant_email: "",
+      applicant_address: "",
       management_name: "",
       management_phone: "",
       management_email: "",
+      management_address: "",
       ...overrides,
     };
   }
@@ -324,7 +328,7 @@ describe("validateRows", () => {
       receivedFrom,
       existingFileNumbers: new Set(),
     });
-    expect(withName.applicant).toEqual({ name: "Ravi Kumar", phone: "9876543210", email: "" });
+    expect(withName.applicant).toEqual({ name: "Ravi Kumar", phone: "9876543210", email: "", address: "" });
 
     const [phoneOnly] = validateRows([row({ applicant_phone: "9876543210" })], {
       sections,

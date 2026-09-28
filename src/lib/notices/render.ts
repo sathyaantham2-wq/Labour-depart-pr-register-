@@ -113,7 +113,7 @@ export function renderNoticeTemplate(templateBuffer: Buffer, data: NoticeTemplat
 export interface NoticeCaseFields {
   file_number: string;
   subject: string;
-  act: string;
+  act: string | null; // many offices never track this at all; see cases.act's own comment
   memo_number: string | null;
   received_date: string;
   next_hearing_date: string | null;
@@ -160,11 +160,11 @@ export function buildNoticeTemplateData(input: {
     today_date: formatDateIST(new Date().toISOString()),
     file_number: input.caseFields.file_number,
     subject: input.caseFields.subject,
-    act: input.caseFields.act,
     office_code: input.caseFields.office_code,
     received_date: formatDateIST(input.caseFields.received_date),
   };
 
+  if (input.caseFields.act) data.act = input.caseFields.act;
   if (input.caseFields.memo_number) data.memo_number = input.caseFields.memo_number;
   if (input.caseFields.next_hearing_date) {
     data.next_hearing_date = formatDateIST(input.caseFields.next_hearing_date);

@@ -80,7 +80,7 @@ export type Database = {
       };
       cases: {
         Row: {
-          act: string;
+          act: string | null;
           amount_recovered: number | null;
           assigned_officer_id: string | null;
           closed_at: string | null;
@@ -101,7 +101,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          act: string;
+          act?: string | null;
           amount_recovered?: number | null;
           assigned_officer_id?: string | null;
           closed_at?: string | null;
@@ -122,7 +122,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          act?: string;
+          act?: string | null;
           amount_recovered?: number | null;
           assigned_officer_id?: string | null;
           closed_at?: string | null;

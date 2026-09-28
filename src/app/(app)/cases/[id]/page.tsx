@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateIST } from "@/lib/format-date";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Case Details" };
+export const metadata: Metadata = { title: "Current Entry Details" };
 
 export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]">) {
   const { id } = await params;
@@ -80,7 +80,7 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
         <CardContent>
           <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Field label="File Number" value={caseRow.file_number} />
-            <Field label="Act" value={caseRow.act} />
+            <Field label="Act" value={caseRow.act ?? "—"} />
             <Field label="Section" value={sectionName} />
             <Field label="Received From" value={receivedFromName} />
             <Field label="Received Date" value={formatDateIST(caseRow.received_date)} />

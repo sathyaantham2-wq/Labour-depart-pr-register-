@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 // Screens are added here as they are built (see Screens tab of the plan).
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/cases", label: "Cases" },
+  { href: "/cases", label: "Current Entries" },
 ];
 
 // Admin-only screens (RBAC Matrix tab). Hidden for staff; RLS also blocks

@@ -19,16 +19,20 @@ export const CASE_IMPORT_FIELDS = [
   "applicant_name",
   "applicant_phone",
   "applicant_email",
+  "applicant_address",
   "management_name",
   "management_phone",
   "management_email",
+  "management_address",
 ] as const;
 
 export type CaseImportField = (typeof CASE_IMPORT_FIELDS)[number];
 
+// Act is deliberately NOT required — confirmed against a real 1,736-row office export that
+// never tracked it at all; cases.act is nullable for exactly this reason (see
+// supabase/migrations/20260928100000_cases_act_optional.sql).
 export const REQUIRED_IMPORT_FIELDS: readonly CaseImportField[] = [
   "file_number",
-  "act",
   "received_date",
 ];
 
@@ -44,9 +48,11 @@ export const IMPORT_FIELD_LABELS: Record<CaseImportField, string> = {
   applicant_name: "Applicant Name",
   applicant_phone: "Applicant Phone",
   applicant_email: "Applicant Email",
+  applicant_address: "Applicant Address",
   management_name: "Management Name",
   management_phone: "Management Phone",
   management_email: "Management Email",
+  management_address: "Management Address",
 };
 
 // Header text an admin's legacy spreadsheet is likely to use, per target field.
@@ -64,6 +70,7 @@ const HEADER_ALIASES: Record<CaseImportField, string[]> = {
   applicant_name: ["applicant name", "applicant", "applicant_name", "complainant", "complainant name"],
   applicant_phone: ["applicant phone", "applicant mobile", "applicant contact", "applicant_phone"],
   applicant_email: ["applicant email", "applicant_email"],
+  applicant_address: ["applicant address", "applicant_address", "complainant address"],
   management_name: [
     "management name",
     "management",
@@ -75,6 +82,7 @@ const HEADER_ALIASES: Record<CaseImportField, string[]> = {
   ],
   management_phone: ["management phone", "employer phone", "management_phone"],
   management_email: ["management email", "employer email", "management_email"],
+  management_address: ["management address", "employer address", "management_address"],
 };
 
 // Lowercases, collapses punctuation/underscores to single spaces, and trims —
@@ -220,12 +228,14 @@ export type MappedRowInput = {
   applicant_name: string;
   applicant_phone: string;
   applicant_email: string;
+  applicant_address: string;
   management_name: string;
   management_phone: string;
   management_email: string;
+  management_address: string;
 };
 
-export type PartyDraft = { name: string; phone: string; email: string };
+export type PartyDraft = { name: string; phone: string; email: string; address: string };
 
 export type ValidatedRow = {
   rowNumber: number;
@@ -245,9 +255,9 @@ export type ValidatedRow = {
   valid: boolean;
 };
 
-function partyDraft(name: string, phone: string, email: string): PartyDraft | null {
+function partyDraft(name: string, phone: string, email: string, address: string): PartyDraft | null {
   if (!name.trim()) return null;
-  return { name: name.trim(), phone: phone.trim(), email: email.trim() };
+  return { name: name.trim(), phone: phone.trim(), email: email.trim(), address: address.trim() };
 }
 
 export type ValidateRowsContext = {
@@ -275,8 +285,9 @@ export function validateRows(rows: MappedRowInput[], context: ValidateRowsContex
     const fileNumber = row.file_number.trim();
     if (!fileNumber) errors.push("File number is required.");
 
+    // Act is optional — many offices' registers (confirmed against a real 1,736-row export)
+    // never track it at all; cases.act is nullable for exactly this reason.
     const act = row.act.trim();
-    if (!act) errors.push("Act is required.");
 
     const receivedDate = normalizeDate(row.received_date_raw);
     if (!receivedDate) errors.push("Received date is missing or unrecognized.");
@@ -313,8 +324,8 @@ export function validateRows(rows: MappedRowInput[], context: ValidateRowsContex
       received_from_id: receivedFromId,
       received_from_warning: receivedFromWarning,
       status: normalizeStatus(row.status),
-      applicant: partyDraft(row.applicant_name, row.applicant_phone, row.applicant_email),
-      management: partyDraft(row.management_name, row.management_phone, row.management_email),
+      applicant: partyDraft(row.applicant_name, row.applicant_phone, row.applicant_email, row.applicant_address),
+      management: partyDraft(row.management_name, row.management_phone, row.management_email, row.management_address),
       errors,
       valid: errors.length === 0,
     };
@@ -353,8 +364,10 @@ export function extractMappedRow(
     applicant_name: stringAt("applicant_name"),
     applicant_phone: stringAt("applicant_phone"),
     applicant_email: stringAt("applicant_email"),
+    applicant_address: stringAt("applicant_address"),
     management_name: stringAt("management_name"),
     management_phone: stringAt("management_phone"),
     management_email: stringAt("management_email"),
+    management_address: stringAt("management_address"),
   };
 }
