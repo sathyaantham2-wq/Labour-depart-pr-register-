@@ -3,8 +3,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { CaseFilters } from "@/components/cases/case-filters";
 import { CaseStatusBadge } from "@/components/cases/status-badge";
-import { isCaseStatus } from "@/components/cases/constants";
+import { DownloadIcon, PlusIcon } from "lucide-react";
 import { formatPhones, parsePhoneJson } from "@/components/cases/party-schema";
+import { applyEntryFilters, ENTRY_LIST_SELECT, parseEntryFilters, REGISTER_COLUMNS } from "@/lib/entries/filters";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -15,51 +16,27 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Current Entries" };
 
 const PAGE_SIZE = 20;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
 
 export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
   const sp = await searchParams;
-
-  const qRaw = first(sp.q)?.trim();
-  // Strip characters that are syntax in PostgREST's .or() filter string.
-  const q = qRaw ? qRaw.replace(/[,()]/g, " ").trim() || undefined : undefined;
-  const act = first(sp.act)?.trim() || undefined;
-  const sectionId = first(sp.section_id);
-  const receivedFromId = first(sp.received_from_id);
-  const statusRaw = first(sp.status);
-  const status = isCaseStatus(statusRaw) ? statusRaw : undefined;
-  const from = first(sp.from);
-  const to = first(sp.to);
-  const pageRaw = Number(first(sp.page));
+  const filters = parseEntryFilters(sp);
+  const { qRaw, act, sectionId, receivedFromId, status, from, to } = filters;
+  const pageParam = Array.isArray(sp.page) ? sp.page[0] : sp.page;
+  const pageRaw = Number(pageParam);
   const page = Number.isFinite(pageRaw) && pageRaw > 1 ? Math.floor(pageRaw) : 1;
 
   const supabase = await createClient();
 
-  let query = supabase
-    .from("cases")
-    .select(
-      "id, file_number, memo_number, subject, received_date, next_hearing_date, status, section_id, received_from_id, parties(role, name, phone, email, address)",
-      { count: "exact" },
-    );
-
-  if (q) query = query.or(`file_number.ilike.%${q}%,subject.ilike.%${q}%`);
-  if (act) query = query.ilike("act", `%${act}%`);
-  if (sectionId && UUID_RE.test(sectionId)) query = query.eq("section_id", sectionId);
-  if (receivedFromId && UUID_RE.test(receivedFromId)) query = query.eq("received_from_id", receivedFromId);
-  if (status) query = query.eq("status", status);
-  if (from && DATE_RE.test(from)) query = query.gte("next_hearing_date", from);
-  if (to && DATE_RE.test(to)) query = query.lte("next_hearing_date", to);
-
   const start = (page - 1) * PAGE_SIZE;
-  query = query
+  const query = applyEntryFilters(supabase.from("cases").select(ENTRY_LIST_SELECT, { count: "exact" }), filters)
     .order("received_date", { ascending: false })
     .order("file_number", { ascending: true })
     .range(start, start + PAGE_SIZE - 1);
+
+  const exportParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(sp)) {
+    if (key !== "page" && typeof value === "string" && value) exportParams.set(key, value);
+  }
 
   const [{ data: cases, count, error }, { data: sections }, { data: receivedFrom }] = await Promise.all([
     query,
@@ -80,10 +57,33 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
             Entries assigned to you. Use Advanced Filters to narrow the list.
           </p>
         </div>
-        <Link href="/cases/new" className={buttonVariants({})}>
-          New Entry
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={`/cases/export${exportParams.size ? `?${exportParams.toString()}` : ""}`}
+            className={buttonVariants({ variant: "outline" })}
+            download
+          >
+            <DownloadIcon data-icon="inline-start" />
+            Export to Excel
+          </a>
+          <Link href="/cases/new" className={buttonVariants({})}>
+            <PlusIcon data-icon="inline-start" />
+            New Entry
+          </Link>
+        </div>
       </div>
+
+      {(filters.noHearing || filters.olderThanDays !== undefined) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm">
+          <span>
+            Showing open entries{" "}
+            {filters.noHearing ? "with no hearing scheduled" : `pending for more than ${filters.olderThanDays} days`}.
+          </span>
+          <Link href="/cases" className="font-medium text-primary hover:underline">
+            Show all entries
+          </Link>
+        </div>
+      )}
 
       <CaseFilters
         sections={sections ?? []}
@@ -125,7 +125,7 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {COLUMNS.map((col, i) => (
+                    {REGISTER_COLUMNS.map((col, i) => (
                       <TableHead key={col} className={i === 0 ? STICKY_CELL : undefined}>
                         {col}
                       </TableHead>
@@ -189,25 +189,6 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
     </div>
   );
 }
-
-// Same columns, order and wording as the office's own register export.
-const COLUMNS = [
-  "File Number",
-  "Memo Number",
-  "Applicant Name",
-  "Applicant Phone",
-  "Applicant Email",
-  "Applicant Address",
-  "Management Phone",
-  "Management Email",
-  "Management Address",
-  "Section",
-  "Receive From",
-  "Hearing Date",
-  "Status",
-  "Subject",
-  "Submission Date",
-];
 
 // File Number stays pinned while the wide table scrolls sideways.
 const STICKY_CELL = "sticky left-0 z-10 bg-card shadow-[1px_0_0_var(--border)]";

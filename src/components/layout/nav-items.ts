@@ -5,6 +5,7 @@ export type NavItem = { href: string; label: string };
 export const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/cases", label: "Current Entries" },
+  { href: "/hearings", label: "Hearings" },
 ];
 
 // Admin-only screens (RBAC Matrix tab). Hidden for staff; RLS also blocks

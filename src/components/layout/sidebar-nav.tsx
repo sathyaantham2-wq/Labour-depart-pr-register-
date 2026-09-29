@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboardIcon,
   FolderKanbanIcon,
+  CalendarDaysIcon,
   ListTreeIcon,
   InboxIcon,
   UsersIcon,
@@ -24,6 +25,7 @@ import type { NavItem } from "./nav-items";
 export const NAV_ICONS: Record<string, LucideIcon> = {
   "/dashboard": LayoutDashboardIcon,
   "/cases": FolderKanbanIcon,
+  "/hearings": CalendarDaysIcon,
   "/sections": ListTreeIcon,
   "/received-from": InboxIcon,
   "/staff": UsersIcon,

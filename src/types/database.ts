@@ -33,6 +33,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      case_documents: {
+        Row: {
+          case_id: string;
+          content_type: string;
+          created_at: string;
+          file_name: string;
+          id: string;
+          size_bytes: number;
+          storage_path: string;
+          uploaded_by: string | null;
+        };
+        Insert: {
+          case_id: string;
+          content_type: string;
+          created_at?: string;
+          file_name: string;
+          id?: string;
+          size_bytes: number;
+          storage_path: string;
+          uploaded_by?: string | null;
+        };
+        Update: {
+          case_id?: string;
+          content_type?: string;
+          created_at?: string;
+          file_name?: string;
+          id?: string;
+          size_bytes?: number;
+          storage_path?: string;
+          uploaded_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "case_documents_case_id_fkey";
+            columns: ["case_id"];
+            isOneToOne: false;
+            referencedRelation: "cases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "case_documents_uploaded_by_fkey";
+            columns: ["uploaded_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       case_status_history: {
         Row: {
           case_id: string;

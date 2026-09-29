@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DocumentsSection } from "@/components/cases/documents-section";
 import { HearingsSection } from "@/components/cases/hearings-section";
 import { PartyCard } from "@/components/cases/party-card";
 import { parsePhoneJson } from "@/components/cases/party-schema";
@@ -10,6 +11,7 @@ import { CASE_STATUS_LABELS, type CaseStatus } from "@/components/cases/constant
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDateIST } from "@/lib/format-date";
+import { getCurrentProfile } from "@/lib/supabase/profile";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Current Entry Details" };
@@ -26,8 +28,16 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
 
   if (caseError || !caseRow) notFound();
 
-  const [{ data: sections }, { data: receivedFrom }, { data: parties }, { data: hearings }, { data: remarks }, { data: history }] =
-    await Promise.all([
+  const [
+    { data: sections },
+    { data: receivedFrom },
+    { data: parties },
+    { data: hearings },
+    { data: remarks },
+    { data: history },
+    { data: documents },
+    profile,
+  ] = await Promise.all([
       supabase.from("sections").select("id, name"),
       supabase.from("received_from").select("id, name"),
       supabase.from("parties").select("*").eq("case_id", id),
@@ -39,6 +49,12 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
         .order("date", { ascending: false })
         .order("created_at", { ascending: false }),
       supabase.from("case_status_history").select("*").eq("case_id", id).order("changed_at", { ascending: false }),
+      supabase
+        .from("case_documents")
+        .select("id, file_name, content_type, size_bytes, created_at, uploaded_by")
+        .eq("case_id", id)
+        .order("created_at", { ascending: false }),
+      getCurrentProfile(),
     ]);
 
   const sectionName = sections?.find((s) => s.id === caseRow.section_id)?.name ?? "—";
@@ -132,6 +148,13 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
       </div>
 
       <HearingsSection caseId={id} hearings={hearings ?? []} />
+
+      <DocumentsSection
+        caseId={id}
+        documents={documents ?? []}
+        currentUserId={profile?.id ?? ""}
+        isAdmin={profile?.role === "admin"}
+      />
 
       <RemarksSection caseId={id} remarks={remarks ?? []} />
     </div>

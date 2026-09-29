@@ -10,6 +10,10 @@ const STAFF_SCREENS = [
   { path: "/dashboard", heading: "Dashboard" },
   { path: "/cases", heading: "Current Entries" },
   { path: "/cases/new", heading: "Create Current Entry" },
+  { path: "/hearings", heading: "Hearings" },
+  { path: "/hearings?view=week", heading: "Hearings" },
+  { path: "/hearings?view=month", heading: "Hearings" },
+  { path: "/hearings?view=overdue", heading: "Hearings" },
 ];
 
 const ADMIN_SCREENS = [
@@ -113,5 +117,45 @@ test.describe("signed in", () => {
     await page.goto("/cases/new");
     await page.getByRole("button", { name: /save|create|submit/i }).first().click();
     await expect(page).toHaveURL(/\/cases\/new/);
+  });
+
+  test("dashboard shows the Needs attention panel with working links", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(page.getByRole("heading", { name: "Needs attention" })).toBeVisible();
+    await page.getByRole("link", { name: /Overdue hearings/ }).click();
+    await expect(page).toHaveURL(/\/hearings\?view=overdue/);
+    await page.goto("/dashboard");
+    await page.getByRole("link", { name: /No hearing scheduled/ }).click();
+    await expect(page.getByText("with no hearing scheduled")).toBeVisible();
+  });
+
+  test("Ctrl+K opens search from any screen", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.keyboard.press("Control+k");
+    const box = page.getByRole("combobox", { name: "Search entries" });
+    await expect(box).toBeFocused();
+    await expect(page.getByRole("option", { name: "New Entry" })).toBeVisible();
+    await box.fill("zzzz-no-such-entry");
+    await expect(page.getByText(/No entries match/)).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(box).toBeHidden();
+  });
+
+  test("Export to Excel downloads an .xlsx", async ({ page }) => {
+    await page.goto("/cases");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("link", { name: "Export to Excel" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^current-entries-\d{4}-\d{2}-\d{2}\.xlsx$/);
+  });
+
+  test("entry page shows the Documents panel", async ({ page }) => {
+    await page.goto("/cases");
+    const firstEntry = page.locator("table tbody tr a").first();
+    test.skip((await firstEntry.count()) === 0, "No entries yet.");
+    await firstEntry.click();
+    await expect(page.getByRole("heading", { name: "Documents" })).toBeVisible();
+    await expect(page.getByText("Choose files")).toBeVisible();
   });
 });

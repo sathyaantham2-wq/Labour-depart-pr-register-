@@ -8,6 +8,7 @@ import {
   SendIcon,
   type LucideIcon,
 } from "lucide-react";
+import { AttentionPanel } from "@/components/dashboard/attention-panel";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -59,6 +60,8 @@ export default async function DashboardPage() {
           Entry counts by Act and Section. Click a number to see the matching entries.
         </p>
       </div>
+
+      <AttentionPanel />
 
       {error ? (
         <p role="alert" className="text-sm text-muted-foreground">
