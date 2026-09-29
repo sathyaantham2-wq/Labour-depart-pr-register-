@@ -95,7 +95,7 @@ test.describe("signed in", () => {
     await nav.getByRole("link", { name: "Current Entries" }).click();
     await expect(page).toHaveURL(/\/cases$/);
     await expect(page.getByRole("heading", { level: 1, name: "Current Entries" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Current Entries" })).toHaveClass(/bg-sidebar-primary/);
+    await expect(nav.getByRole("link", { name: "Current Entries" })).toHaveClass(/btn-3d/);
   });
 
   test("current entries filters and first entry open cleanly", async ({ page }) => {

@@ -8,9 +8,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-gradient-to-b from-primary to-[color-mix(in_oklch,var(--primary),black_12%)] text-primary-foreground shadow-glow-primary hover:brightness-110 hover:shadow-elevation-3 active:brightness-95",
+          "btn-3d bg-gradient-to-b from-[color-mix(in_oklch,var(--primary),white_16%)] to-primary text-primary-foreground hover:brightness-105 active:brightness-95",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-card shadow-elevation-1 hover:border-primary/40 hover:bg-accent/60 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground shadow-elevation-1 hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
@@ -18,7 +18,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         success:
-          "bg-gradient-to-b from-success to-[color-mix(in_oklch,var(--success),black_12%)] text-success-foreground shadow-elevation-2 hover:brightness-110",
+          "btn-3d bg-gradient-to-b from-[color-mix(in_oklch,var(--success),white_16%)] to-success text-success-foreground [--btn-edge:var(--success)] [--btn-glow:oklch(0.62_0.16_160/0.4)] hover:brightness-105 active:brightness-95",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

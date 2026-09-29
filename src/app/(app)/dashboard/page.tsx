@@ -13,6 +13,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "cn";
+import { formatLong, todayIST } from "@/lib/calendar-dates";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -54,11 +55,32 @@ export default async function DashboardPage() {
 
   return (
     <div className="grid gap-6">
-      <div>
-        <h1 className="font-heading text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Entry counts by Act and Section. Click a number to see the matching entries.
-        </p>
+      <div className="bg-hero relative overflow-hidden rounded-2xl p-6 text-white shadow-elevation-4 ring-1 ring-white/15 md:p-8">
+        <div className="animate-float-slow pointer-events-none absolute -top-12 -right-10 size-52 rounded-full bg-gradient-to-br from-white/30 to-white/0 blur-[2px]" />
+        <div className="animate-float-slow pointer-events-none absolute -right-2 -bottom-16 size-40 rounded-full bg-gradient-to-tr from-vivid-pink/50 to-transparent [animation-delay:-4s]" />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium tracking-wide text-white/70 uppercase">{formatLong(todayIST())}</p>
+            <h1 className="mt-1 font-heading text-3xl font-semibold tracking-tight drop-shadow-sm">Dashboard</h1>
+            <p className="mt-1 max-w-xl text-sm text-white/75">
+              Entry counts by Act and Section. Click a number to see the matching entries.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/cases/new"
+              className="inline-flex h-9 items-center rounded-lg bg-white px-3.5 text-sm font-medium text-primary shadow-[0_3px_0_0_oklch(0.8_0.03_285),0_10px_18px_-6px_oklch(0_0_0/0.45)] transition-all hover:bg-white/95 active:translate-y-0.5 active:shadow-[0_1px_0_0_oklch(0.8_0.03_285)]"
+            >
+              New Entry
+            </Link>
+            <Link
+              href="/hearings"
+              className="inline-flex h-9 items-center rounded-lg border border-white/30 bg-white/10 px-3.5 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+            >
+              Hearings calendar
+            </Link>
+          </div>
+        </div>
       </div>
 
       <AttentionPanel />
@@ -111,7 +133,10 @@ function DashboardStats({ rows }: { rows: DashboardStatRow[] }) {
 
       {[...byAct.entries()].map(([act, sectionRows]) => (
         <div key={act} className="grid gap-3">
-          <h2 className="font-heading text-lg font-semibold tracking-tight">{act}</h2>
+          <h2 className="flex items-center gap-2.5 font-heading text-lg font-semibold tracking-tight">
+            <span aria-hidden className="h-5 w-1.5 rounded-full bg-gradient-to-b from-primary to-vivid-pink" />
+            {act}
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {sectionRows.map((row, index) => (
               <SectionCard
@@ -128,10 +153,21 @@ function DashboardStats({ rows }: { rows: DashboardStatRow[] }) {
 }
 
 const KPI_TONE_CLASSES = {
-  primary: "from-primary to-[color-mix(in_oklch,var(--primary),black_15%)] text-primary-foreground",
-  warning: "from-warning to-[color-mix(in_oklch,var(--warning),black_10%)] text-warning-foreground",
-  success: "from-success to-[color-mix(in_oklch,var(--success),black_10%)] text-success-foreground",
-  accent: "from-[oklch(0.65_0.15_195)] to-[color-mix(in_oklch,oklch(0.65_0.15_195),black_15%)] text-white",
+  primary:
+    "from-[oklch(0.7_0.19_290)] to-primary text-primary-foreground [--tile-glow:oklch(0.52_0.23_277/0.45)]",
+  warning:
+    "from-[oklch(0.86_0.15_85)] to-[oklch(0.72_0.17_55)] text-warning-foreground [--tile-glow:oklch(0.75_0.17_60/0.5)]",
+  success:
+    "from-[oklch(0.76_0.16_165)] to-success text-success-foreground [--tile-glow:oklch(0.62_0.16_160/0.45)]",
+  accent:
+    "from-vivid-pink to-vivid-violet text-white [--tile-glow:oklch(0.6_0.23_330/0.45)]",
+} as const;
+
+const KPI_BLOB_CLASSES = {
+  primary: "from-primary to-vivid-violet",
+  warning: "from-warning to-vivid-pink",
+  success: "from-success to-vivid-teal",
+  accent: "from-vivid-pink to-vivid-violet",
 } as const;
 
 function KpiCard({
@@ -146,22 +182,31 @@ function KpiCard({
   tone: keyof typeof KPI_TONE_CLASSES;
 }) {
   return (
-    <Card className="relative overflow-hidden">
-      <CardContent className="flex items-center gap-4">
+    <div className="lift-3d rounded-xl">
+      <Card className="relative h-full overflow-hidden">
         <div
+          aria-hidden
           className={cn(
-            "flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-elevation-2",
-            KPI_TONE_CLASSES[tone],
+            "pointer-events-none absolute -top-6 -right-6 size-24 rounded-full bg-gradient-to-br opacity-20 blur-xl",
+            KPI_BLOB_CLASSES[tone],
           )}
-        >
-          <Icon className="size-5" />
-        </div>
-        <div>
-          <div className="text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
-          <div className="text-xs text-muted-foreground">{label}</div>
-        </div>
-      </CardContent>
-    </Card>
+        />
+        <CardContent className="relative flex items-center gap-4">
+          <div
+            className={cn(
+              "tile-3d flex size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br",
+              KPI_TONE_CLASSES[tone],
+            )}
+          >
+            <Icon className="size-5.5 drop-shadow-sm" />
+          </div>
+          <div>
+            <div className="text-3xl font-semibold tracking-tight tabular-nums">{value}</div>
+            <div className="text-xs font-medium text-muted-foreground">{label}</div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -173,7 +218,8 @@ const STAT_TONE_CLASSES: Record<string, string> = {
 
 function SectionCard({ row, act }: { row: DashboardStatRow; act: string }) {
   return (
-    <Card className="transition-all hover:-translate-y-0.5 hover:shadow-elevation-3">
+    <div className="lift-3d rounded-xl">
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>{row.section_name ?? "Section"}</CardTitle>
       </CardHeader>
@@ -202,5 +248,6 @@ function SectionCard({ row, act }: { row: DashboardStatRow; act: string }) {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

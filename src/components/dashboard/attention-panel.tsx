@@ -77,7 +77,8 @@ export async function AttentionPanel() {
 
   return (
     <section className="grid gap-3" aria-labelledby="attention-heading">
-      <h2 id="attention-heading" className="font-heading text-lg font-semibold tracking-tight">
+      <h2 id="attention-heading" className="flex items-center gap-2.5 font-heading text-lg font-semibold tracking-tight">
+        <span aria-hidden className="h-5 w-1.5 rounded-full bg-gradient-to-b from-warning to-vivid-pink" />
         Needs attention
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -85,12 +86,12 @@ export async function AttentionPanel() {
           const active = (item.count ?? 0) > 0;
           const Icon = item.icon;
           return (
-            <Link key={item.label} href={item.href} className="group rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
+            <Link key={item.label} href={item.href} className="lift-3d block rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
               <Card
                 className={cn(
-                  "h-full transition-all group-hover:-translate-y-0.5 group-hover:shadow-elevation-3",
-                  active && item.tone === "alert" && "ring-destructive/30",
-                  active && item.tone === "warn" && "ring-warning/40",
+                  "h-full",
+                  active && item.tone === "alert" && "ring-destructive/40",
+                  active && item.tone === "warn" && "ring-warning/50",
                 )}
               >
                 <CardContent className="flex items-start gap-3">
@@ -98,9 +99,10 @@ export async function AttentionPanel() {
                     className={cn(
                       "flex size-10 shrink-0 items-center justify-center rounded-xl",
                       !active && "bg-muted text-muted-foreground",
-                      active && item.tone === "info" && "bg-primary/10 text-primary",
-                      active && item.tone === "alert" && "bg-destructive/10 text-destructive",
-                      active && item.tone === "warn" && "bg-warning/20 text-[color-mix(in_oklch,var(--warning),black_35%)]",
+                      active && "tile-3d bg-gradient-to-br",
+                      active && item.tone === "info" && "from-[oklch(0.7_0.19_290)] to-primary text-white [--tile-glow:oklch(0.52_0.23_277/0.45)]",
+                      active && item.tone === "alert" && "from-[oklch(0.7_0.2_25)] to-destructive text-white [--tile-glow:oklch(0.58_0.22_22/0.45)]",
+                      active && item.tone === "warn" && "from-[oklch(0.86_0.15_85)] to-[oklch(0.72_0.17_55)] text-warning-foreground [--tile-glow:oklch(0.75_0.17_60/0.5)]",
                     )}
                   >
                     <Icon className="size-5" />

@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -31,6 +31,9 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-vivid-teal: var(--vivid-teal);
+  --color-vivid-pink: var(--vivid-pink);
+  --color-vivid-violet: var(--vivid-violet);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -55,87 +58,95 @@
 }
 
 :root {
-  /* Deep professional blue — trust + authority, fits a government office tool. */
-  --background: oklch(0.984 0.004 264);
-  --foreground: oklch(0.21 0.03 264);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.03 264);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.03 264);
-  --primary: oklch(0.47 0.17 264);
-  --primary-foreground: oklch(0.98 0.01 264);
-  --primary-glow: oklch(0.47 0.17 264 / 0.35);
-  --secondary: oklch(0.955 0.012 264);
-  --secondary-foreground: oklch(0.3 0.05 264);
-  --muted: oklch(0.96 0.01 264);
-  --muted-foreground: oklch(0.52 0.03 264);
-  --accent: oklch(0.94 0.03 235);
-  --accent-foreground: oklch(0.3 0.06 264);
-  --destructive: oklch(0.577 0.22 27.325);
-  --success: oklch(0.6 0.14 155);
-  --success-foreground: oklch(0.98 0.02 155);
-  --warning: oklch(0.76 0.15 78);
-  --warning-foreground: oklch(0.28 0.06 78);
-  --border: oklch(0.9 0.012 264);
-  --input: oklch(0.9 0.012 264);
-  --ring: oklch(0.47 0.17 264 / 0.5);
-  --chart-1: oklch(0.6 0.16 264);
-  --chart-2: oklch(0.65 0.15 195);
-  --chart-3: oklch(0.72 0.15 155);
-  --chart-4: oklch(0.76 0.15 78);
-  --chart-5: oklch(0.62 0.2 27);
-  --radius: 0.75rem;
-  --shadow-color: 264 30% 15%;
+  /* Vibrant indigo-violet brand with teal and pink accents. The canvas is a soft
+     lavender-tinted off-white (never pure white) so long sessions stay easy on the eyes;
+     cards are a shade lighter so they lift off it. Text keeps strong contrast. */
+  --background: oklch(0.962 0.014 285);
+  --foreground: oklch(0.22 0.045 282);
+  --card: oklch(0.993 0.004 285);
+  --card-foreground: oklch(0.22 0.045 282);
+  --popover: oklch(0.993 0.004 285);
+  --popover-foreground: oklch(0.22 0.045 282);
+  --primary: oklch(0.52 0.23 277);
+  --primary-foreground: oklch(0.985 0.008 285);
+  --primary-glow: oklch(0.52 0.23 277 / 0.38);
+  --secondary: oklch(0.94 0.02 285);
+  --secondary-foreground: oklch(0.32 0.08 282);
+  --muted: oklch(0.945 0.016 285);
+  --muted-foreground: oklch(0.49 0.04 282);
+  --accent: oklch(0.93 0.045 300);
+  --accent-foreground: oklch(0.32 0.1 290);
+  --destructive: oklch(0.58 0.22 22);
+  --success: oklch(0.62 0.16 160);
+  --success-foreground: oklch(0.985 0.02 160);
+  --warning: oklch(0.79 0.16 72);
+  --warning-foreground: oklch(0.28 0.07 65);
+  --vivid-teal: oklch(0.68 0.13 197);
+  --vivid-pink: oklch(0.64 0.22 350);
+  --vivid-violet: oklch(0.58 0.24 300);
+  --border: oklch(0.905 0.02 285);
+  --input: oklch(0.895 0.022 285);
+  --ring: oklch(0.52 0.23 277 / 0.5);
+  --chart-1: oklch(0.55 0.22 277);
+  --chart-2: oklch(0.68 0.13 197);
+  --chart-3: oklch(0.7 0.16 160);
+  --chart-4: oklch(0.79 0.16 72);
+  --chart-5: oklch(0.64 0.22 350);
+  --radius: 0.85rem;
+  --shadow-color: 277 48% 20%;
 
-  /* Deep navy sidebar for immediate visual depth against the light canvas. */
-  --sidebar: oklch(0.2 0.045 264);
-  --sidebar-foreground: oklch(0.92 0.015 264);
-  --sidebar-primary: oklch(0.58 0.19 264);
-  --sidebar-primary-foreground: oklch(0.98 0.01 264);
-  --sidebar-accent: oklch(0.27 0.05 264);
-  --sidebar-accent-foreground: oklch(0.97 0.01 264);
+  /* Rich indigo sidebar that fades into violet — strong depth against the light canvas. */
+  --sidebar: oklch(0.27 0.11 280);
+  --sidebar-foreground: oklch(0.94 0.02 285);
+  --sidebar-primary: oklch(0.62 0.22 285);
+  --sidebar-primary-foreground: oklch(0.99 0.005 285);
+  --sidebar-accent: oklch(0.34 0.11 282);
+  --sidebar-accent-foreground: oklch(0.985 0.008 285);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.58 0.19 264 / 0.6);
+  --sidebar-ring: oklch(0.7 0.2 285 / 0.6);
 }
 
 .dark {
-  --background: oklch(0.16 0.02 264);
-  --foreground: oklch(0.96 0.01 264);
-  --card: oklch(0.21 0.025 264);
-  --card-foreground: oklch(0.96 0.01 264);
-  --popover: oklch(0.21 0.025 264);
-  --popover-foreground: oklch(0.96 0.01 264);
-  --primary: oklch(0.68 0.16 264);
-  --primary-foreground: oklch(0.15 0.03 264);
-  --primary-glow: oklch(0.68 0.16 264 / 0.45);
-  --secondary: oklch(0.27 0.02 264);
-  --secondary-foreground: oklch(0.96 0.01 264);
-  --muted: oklch(0.27 0.02 264);
-  --muted-foreground: oklch(0.68 0.02 264);
-  --accent: oklch(0.3 0.04 235);
-  --accent-foreground: oklch(0.96 0.01 264);
-  --destructive: oklch(0.704 0.191 22.216);
-  --success: oklch(0.68 0.14 155);
-  --success-foreground: oklch(0.15 0.03 155);
-  --warning: oklch(0.78 0.14 78);
-  --warning-foreground: oklch(0.2 0.05 78);
+  --background: oklch(0.17 0.03 282);
+  --foreground: oklch(0.96 0.012 285);
+  --card: oklch(0.22 0.04 282);
+  --card-foreground: oklch(0.96 0.012 285);
+  --popover: oklch(0.22 0.04 282);
+  --popover-foreground: oklch(0.96 0.012 285);
+  --primary: oklch(0.7 0.18 280);
+  --primary-foreground: oklch(0.16 0.04 282);
+  --primary-glow: oklch(0.7 0.18 280 / 0.45);
+  --secondary: oklch(0.29 0.04 282);
+  --secondary-foreground: oklch(0.96 0.012 285);
+  --muted: oklch(0.28 0.04 282);
+  --muted-foreground: oklch(0.7 0.04 285);
+  --accent: oklch(0.33 0.07 295);
+  --accent-foreground: oklch(0.96 0.012 285);
+  --destructive: oklch(0.7 0.19 22);
+  --success: oklch(0.7 0.15 160);
+  --success-foreground: oklch(0.15 0.03 160);
+  --warning: oklch(0.8 0.15 72);
+  --warning-foreground: oklch(0.2 0.05 65);
+  --vivid-teal: oklch(0.75 0.12 197);
+  --vivid-pink: oklch(0.72 0.19 350);
+  --vivid-violet: oklch(0.7 0.19 300);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.68 0.16 264 / 0.5);
-  --chart-1: oklch(0.6 0.16 264);
-  --chart-2: oklch(0.65 0.15 195);
-  --chart-3: oklch(0.72 0.15 155);
-  --chart-4: oklch(0.76 0.15 78);
-  --chart-5: oklch(0.62 0.2 27);
-  --shadow-color: 264 60% 3%;
-  --sidebar: oklch(0.12 0.025 264);
-  --sidebar-foreground: oklch(0.92 0.015 264);
-  --sidebar-primary: oklch(0.68 0.16 264);
-  --sidebar-primary-foreground: oklch(0.15 0.03 264);
-  --sidebar-accent: oklch(0.22 0.03 264);
-  --sidebar-accent-foreground: oklch(0.97 0.01 264);
+  --ring: oklch(0.7 0.18 280 / 0.5);
+  --chart-1: oklch(0.65 0.2 277);
+  --chart-2: oklch(0.72 0.12 197);
+  --chart-3: oklch(0.74 0.15 160);
+  --chart-4: oklch(0.8 0.15 72);
+  --chart-5: oklch(0.7 0.2 350);
+  --shadow-color: 282 60% 4%;
+  --sidebar: oklch(0.15 0.05 282);
+  --sidebar-foreground: oklch(0.94 0.02 285);
+  --sidebar-primary: oklch(0.68 0.2 285);
+  --sidebar-primary-foreground: oklch(0.15 0.04 282);
+  --sidebar-accent: oklch(0.25 0.06 282);
+  --sidebar-accent-foreground: oklch(0.985 0.008 285);
   --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.68 0.16 264 / 0.6);
+  --sidebar-ring: oklch(0.7 0.18 285 / 0.6);
 }
 
 @layer base {
@@ -151,55 +162,152 @@
 }
 
 @layer utilities {
-  /* Layered "elevation" shadows — a soft ambient shadow plus a tighter
-     contact shadow, which reads as physical depth rather than a flat
-     drop-shadow. Used instead of Tailwind's default shadow-* scale. */
+  /* Layered "elevation" shadows — a soft coloured ambient shadow plus a tighter
+     contact shadow, which reads as physical depth rather than a flat drop-shadow. */
   .shadow-elevation-1 {
     box-shadow:
-      0 1px 2px hsl(var(--shadow-color) / 0.06),
-      0 1px 1px hsl(var(--shadow-color) / 0.04);
+      0 1px 2px hsl(var(--shadow-color) / 0.07),
+      0 1px 1px hsl(var(--shadow-color) / 0.05);
   }
   .shadow-elevation-2 {
     box-shadow:
-      0 2px 4px -1px hsl(var(--shadow-color) / 0.08),
-      0 4px 10px -2px hsl(var(--shadow-color) / 0.07),
-      0 1px 0 hsl(0 0% 100% / 0.6) inset;
+      0 2px 4px -1px hsl(var(--shadow-color) / 0.09),
+      0 6px 14px -3px hsl(var(--shadow-color) / 0.09),
+      0 1px 0 hsl(0 0% 100% / 0.7) inset;
   }
   .dark .shadow-elevation-2 {
     box-shadow:
       0 2px 4px -1px hsl(var(--shadow-color) / 0.3),
-      0 4px 10px -2px hsl(var(--shadow-color) / 0.25);
+      0 6px 14px -3px hsl(var(--shadow-color) / 0.25);
   }
   .shadow-elevation-3 {
     box-shadow:
-      0 4px 8px -2px hsl(var(--shadow-color) / 0.1),
-      0 12px 24px -6px hsl(var(--shadow-color) / 0.1),
-      0 1px 0 hsl(0 0% 100% / 0.6) inset;
+      0 4px 8px -2px hsl(var(--shadow-color) / 0.12),
+      0 16px 30px -8px hsl(var(--shadow-color) / 0.16),
+      0 1px 0 hsl(0 0% 100% / 0.7) inset;
   }
   .dark .shadow-elevation-3 {
     box-shadow:
       0 4px 8px -2px hsl(var(--shadow-color) / 0.35),
-      0 12px 24px -6px hsl(var(--shadow-color) / 0.3);
+      0 16px 30px -8px hsl(var(--shadow-color) / 0.3);
   }
   .shadow-elevation-4 {
     box-shadow:
-      0 8px 16px -4px hsl(var(--shadow-color) / 0.12),
-      0 24px 48px -12px hsl(var(--shadow-color) / 0.16);
+      0 10px 20px -4px hsl(var(--shadow-color) / 0.16),
+      0 32px 60px -14px hsl(var(--shadow-color) / 0.28);
   }
   .shadow-glow-primary {
     box-shadow:
       0 6px 16px -4px var(--primary-glow),
       0 2px 4px -1px var(--primary-glow);
   }
+
+  /* Page canvas: three soft colour washes (violet, teal, pink) over the tinted background. */
   .bg-ambient {
     background-image:
-      radial-gradient(ellipse 80% 50% at 15% -10%, oklch(0.47 0.17 264 / 0.1), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.65 0.15 195 / 0.08), transparent);
+      radial-gradient(ellipse 70% 45% at 12% -8%, oklch(0.6 0.2 285 / 0.16), transparent),
+      radial-gradient(ellipse 55% 38% at 100% 2%, oklch(0.72 0.13 197 / 0.14), transparent),
+      radial-gradient(ellipse 50% 35% at 60% 108%, oklch(0.7 0.2 350 / 0.1), transparent);
     background-attachment: fixed;
   }
   .dark .bg-ambient {
     background-image:
-      radial-gradient(ellipse 80% 50% at 15% -10%, oklch(0.68 0.16 264 / 0.14), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 0%, oklch(0.65 0.15 195 / 0.1), transparent);
+      radial-gradient(ellipse 70% 45% at 12% -8%, oklch(0.6 0.2 285 / 0.2), transparent),
+      radial-gradient(ellipse 55% 38% at 100% 2%, oklch(0.72 0.13 197 / 0.14), transparent),
+      radial-gradient(ellipse 50% 35% at 60% 108%, oklch(0.7 0.2 350 / 0.12), transparent);
+  }
+
+  /* Sidebar surface: deep indigo → violet with a faint teal glow at the base. */
+  .bg-sidebar-gradient {
+    background-color: var(--sidebar);
+    background-image:
+      radial-gradient(ellipse 120% 40% at 0% 0%, oklch(0.55 0.22 290 / 0.45), transparent 70%),
+      radial-gradient(ellipse 100% 35% at 100% 100%, oklch(0.6 0.14 197 / 0.25), transparent 70%),
+      linear-gradient(180deg, oklch(0.3 0.12 280), oklch(0.2 0.1 292));
+  }
+  .dark .bg-sidebar-gradient {
+    background-image:
+      radial-gradient(ellipse 120% 40% at 0% 0%, oklch(0.5 0.2 290 / 0.35), transparent 70%),
+      radial-gradient(ellipse 100% 35% at 100% 100%, oklch(0.55 0.13 197 / 0.2), transparent 70%),
+      linear-gradient(180deg, oklch(0.19 0.07 282), oklch(0.13 0.05 292));
+  }
+
+  /* Hero surface (login page, dashboard banner). */
+  .bg-hero {
+    background-color: oklch(0.24 0.1 282);
+    background-image:
+      radial-gradient(ellipse 60% 50% at 15% 10%, oklch(0.58 0.24 290 / 0.75), transparent 70%),
+      radial-gradient(ellipse 50% 45% at 90% 20%, oklch(0.66 0.15 197 / 0.5), transparent 70%),
+      radial-gradient(ellipse 55% 50% at 60% 110%, oklch(0.62 0.24 350 / 0.5), transparent 70%),
+      linear-gradient(160deg, oklch(0.3 0.13 278), oklch(0.2 0.09 292));
+  }
+
+  /* Physical "key" button: lit top edge, solid darker underside, soft coloured glow.
+     Pressing it sinks the key. Colour comes from --btn-edge / --btn-glow. */
+  .btn-3d {
+    --btn-edge: var(--primary);
+    --btn-glow: var(--primary-glow);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.32),
+      0 3px 0 0 color-mix(in oklch, var(--btn-edge), black 42%),
+      0 9px 16px -5px var(--btn-glow);
+  }
+  .btn-3d:hover:not(:disabled) {
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.4),
+      0 3px 0 0 color-mix(in oklch, var(--btn-edge), black 42%),
+      0 12px 22px -5px var(--btn-glow);
+  }
+  .btn-3d:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.2),
+      0 1px 0 0 color-mix(in oklch, var(--btn-edge), black 42%),
+      0 3px 8px -3px var(--btn-glow);
+  }
+
+  /* Glossy icon tile: a lit top rim, shaded underside and a coloured drop glow. */
+  .tile-3d {
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.5),
+      inset 0 -3px 0 oklch(0 0 0 / 0.16),
+      0 8px 14px -5px var(--tile-glow, var(--primary-glow));
+  }
+
+  /* Card that rises and tilts toward the viewer on hover. */
+  .lift-3d {
+    transition:
+      transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.3s ease;
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .lift-3d:hover {
+      transform: perspective(900px) translateY(-4px) rotateX(2.5deg);
+    }
+    .lift-3d:hover > [data-slot="card"],
+    .lift-3d[data-slot="card"]:hover {
+      box-shadow:
+        0 12px 24px -6px hsl(var(--shadow-color) / 0.2),
+        0 30px 50px -16px hsl(var(--shadow-color) / 0.26),
+        0 1px 0 hsl(0 0% 100% / 0.7) inset;
+    }
+  }
+
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -14px, 0);
+    }
+  }
+  .animate-float-slow {
+    animation: float-slow 9s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float-slow {
+      animation: none;
+    }
   }
 }
