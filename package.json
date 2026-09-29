@@ -11,7 +11,8 @@
     "db:local:test": "node scripts/db-local.mjs test",
     "typecheck": "next typegen && tsc --noEmit",
     "db:local:types": "node scripts/db-local.mjs types",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -37,6 +38,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
