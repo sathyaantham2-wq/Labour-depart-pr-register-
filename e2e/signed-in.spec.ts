@@ -49,14 +49,14 @@ test.describe("office register layout", () => {
   test("Create Current Entry form fields follow the register order", async ({ page }) => {
     await page.goto("/cases/new");
     const labels = (await page.locator("form label").allInnerTexts()).map((t) => t.replace("*", "").trim());
-    expect(labels.filter((l) => REGISTER_COLUMNS.includes(l))).toEqual(REGISTER_COLUMNS);
+    expect(labels.filter((l) => REGISTER_COLUMNS.includes(l))).toEqual([...REGISTER_COLUMNS, "Actions"]);
   });
 
   test("Current Entries list columns follow the register order", async ({ page }) => {
     await page.goto("/cases");
     const table = page.locator("table");
     test.skip((await table.count()) === 0, "No entries yet, so no table is shown.");
-    expect(await table.locator("thead th").allInnerTexts()).toEqual(REGISTER_COLUMNS);
+    expect(await table.locator("thead th").allInnerTexts()).toEqual([...REGISTER_COLUMNS, "Actions"]);
   });
 });
 

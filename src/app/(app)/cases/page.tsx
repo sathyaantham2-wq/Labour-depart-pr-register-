@@ -145,6 +145,7 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
                         {col}
                       </TableHead>
                     ))}
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -176,6 +177,16 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
                         </TableCell>
                         <LongCell text={c.subject} wide />
                         <TableCell>{formatDateIST(c.received_date)}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1.5">
+                            <Link href={`/cases/${c.id}`} className={buttonVariants({ variant: "outline", size: "xs" })}>
+                              Open
+                            </Link>
+                            <Link href={`/cases/${c.id}/edit`} className={buttonVariants({ variant: "outline", size: "xs" })}>
+                              Edit
+                            </Link>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
