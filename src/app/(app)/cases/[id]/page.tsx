@@ -82,11 +82,11 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
             <Field label="File Number" value={caseRow.file_number} />
             <Field label="Act" value={caseRow.act ?? "—"} />
             <Field label="Section" value={sectionName} />
-            <Field label="Received From" value={receivedFromName} />
-            <Field label="Received Date" value={formatDateIST(caseRow.received_date)} />
+            <Field label="Receive From" value={receivedFromName} />
+            <Field label="Submission Date" value={formatDateIST(caseRow.received_date)} />
             <Field label="Memo Number" value={caseRow.memo_number ?? "—"} />
             <Field
-              label="Next Hearing Date"
+              label="Hearing Date"
               value={caseRow.next_hearing_date ? formatDateIST(caseRow.next_hearing_date) : "—"}
             />
             <Field label="Status" value={statusLabel} />

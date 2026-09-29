@@ -7,11 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PARTY_ROLE_LABELS, type PartyRole } from "./constants";
 
-// Shared Name / Phone numbers (each with its own optional name) / WhatsApp / Email / Address
-// block, used inline in the combined Create Current Entry form. (The existing per-party edit
-// dialog on the Case Details page, PartyForm, has its own copy of this same shape — left as-is
-// since it's already shipped and tested; this component is for new form surfaces, not a retrofit
-// of that one.)
+// Individual Applicant/Management fields for the Create Current Entry form. Split into one
+// component per field (rather than one block per party) so the form can lay them out in the
+// office's own register column order, where e.g. Management Name sits apart from the rest.
 
 export type PartyFieldsValues = {
   name: string;
@@ -21,91 +19,105 @@ export type PartyFieldsValues = {
   address: string;
 };
 
-// Any form that embeds an applicant + management block of this shape (Create Current Entry is
-// the only one today) can use PartyFields against its own values type by satisfying this.
 export type PartyFieldsFormShape = { applicant: PartyFieldsValues; management: PartyFieldsValues };
 
 export function partyFieldsDefaults(): PartyFieldsValues {
   return { name: "", phone: [{ name: "", phone: "" }], whatsapp_phone: "", email: "", address: "" };
 }
 
-export function PartyFields<TFormValues extends PartyFieldsFormShape>({
+type FieldProps<T extends PartyFieldsFormShape> = {
+  role: PartyRole;
+  register: UseFormRegister<T>;
+  errors?: FieldErrors<PartyFieldsValues>;
+  className?: string;
+};
+
+export function PartyNameField<T extends PartyFieldsFormShape>({ role, register, errors, className }: FieldProps<T>) {
+  return (
+    <div className={`grid gap-1.5 ${className ?? ""}`}>
+      <Label htmlFor={`${role}-name`}>{PARTY_ROLE_LABELS[role]} Name</Label>
+      <Input id={`${role}-name`} {...register(`${role}.name` as never)} aria-invalid={!!errors?.name} />
+      {errors?.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+    </div>
+  );
+}
+
+export function PartyPhonesField<T extends PartyFieldsFormShape>({
   role,
-  namePrefix,
   register,
   control,
-  errors,
-}: {
-  role: PartyRole;
-  namePrefix: "applicant" | "management";
-  register: UseFormRegister<TFormValues>;
-  control: Control<TFormValues>;
-  errors?: FieldErrors<PartyFieldsValues>;
-}) {
-  const { fields, append, remove } = useFieldArray({ control, name: `${namePrefix}.phone` as never });
-  const label = PARTY_ROLE_LABELS[role];
-
+  className,
+}: FieldProps<T> & { control: Control<T> }) {
+  const { fields, append, remove } = useFieldArray({ control, name: `${role}.phone` as never });
   return (
-    <div className="grid gap-3">
-      <div className="grid gap-1.5">
-        <Label htmlFor={`${namePrefix}-name`}>{label} Name</Label>
-        <Input id={`${namePrefix}-name`} {...register(`${namePrefix}.name` as never)} aria-invalid={!!errors?.name} />
-        {errors?.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+    <div className={`grid gap-1.5 ${className ?? ""}`}>
+      <Label htmlFor={`${role}-phone-0`}>{PARTY_ROLE_LABELS[role]} Phone</Label>
+      <div className="grid gap-2">
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex gap-2">
+            <Input
+              {...register(`${role}.phone.${index}.name` as never)}
+              placeholder="Name"
+              aria-label={`${PARTY_ROLE_LABELS[role]} phone ${index + 1} name`}
+              className="w-32 sm:w-36"
+            />
+            <Input
+              id={`${role}-phone-${index}`}
+              {...register(`${role}.phone.${index}.phone` as never)}
+              placeholder="Phone number"
+              inputMode="tel"
+            />
+            {fields.length > 1 && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
+                Remove
+              </Button>
+            )}
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="justify-self-start"
+          onClick={() => append({ name: "", phone: "" } as never)}
+        >
+          Add phone number
+        </Button>
       </div>
+    </div>
+  );
+}
 
-      <div className="grid gap-1.5">
-        <Label>{label} Phone Numbers</Label>
-        <div className="grid gap-2">
-          {fields.map((field, index) => (
-            <div key={field.id} className="flex gap-2">
-              <Input
-                {...register(`${namePrefix}.phone.${index}.name` as never)}
-                placeholder="Name"
-                className="w-32 sm:w-40"
-              />
-              <Input {...register(`${namePrefix}.phone.${index}.phone` as never)} placeholder="Phone Number" />
-              {fields.length > 1 && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
-                  Remove
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => append({ name: "", phone: "" } as never)}
-          >
-            Add phone number
-          </Button>
-        </div>
-      </div>
+export function PartyEmailField<T extends PartyFieldsFormShape>({ role, register, errors, className }: FieldProps<T>) {
+  return (
+    <div className={`grid gap-1.5 ${className ?? ""}`}>
+      <Label htmlFor={`${role}-email`}>{PARTY_ROLE_LABELS[role]} Email</Label>
+      <Input id={`${role}-email`} type="email" {...register(`${role}.email` as never)} aria-invalid={!!errors?.email} />
+      {errors?.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+    </div>
+  );
+}
 
-      <div className="grid gap-1.5">
-        <Label htmlFor={`${namePrefix}-whatsapp`}>{label} WhatsApp Number</Label>
-        <Input
-          id={`${namePrefix}-whatsapp`}
-          {...register(`${namePrefix}.whatsapp_phone` as never)}
-          placeholder="+919876543210"
-          aria-invalid={!!errors?.whatsapp_phone}
-        />
-        <p className="text-xs text-muted-foreground">
-          Used for WhatsApp notice delivery. Not on the tapace.com form — added for this app&apos;s notification feature.
-        </p>
-        {errors?.whatsapp_phone && <p className="text-sm text-destructive">{errors.whatsapp_phone.message}</p>}
-      </div>
+export function PartyAddressField<T extends PartyFieldsFormShape>({ role, register, className }: FieldProps<T>) {
+  return (
+    <div className={`grid gap-1.5 ${className ?? ""}`}>
+      <Label htmlFor={`${role}-address`}>{PARTY_ROLE_LABELS[role]} Address</Label>
+      <Textarea id={`${role}-address`} rows={2} {...register(`${role}.address` as never)} />
+    </div>
+  );
+}
 
-      <div className="grid gap-1.5">
-        <Label htmlFor={`${namePrefix}-email`}>{label} Email</Label>
-        <Input id={`${namePrefix}-email`} type="email" {...register(`${namePrefix}.email` as never)} aria-invalid={!!errors?.email} />
-        {errors?.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
-      </div>
-
-      <div className="grid gap-1.5">
-        <Label htmlFor={`${namePrefix}-address`}>{label} Address</Label>
-        <Textarea id={`${namePrefix}-address`} rows={2} {...register(`${namePrefix}.address` as never)} />
-      </div>
+export function PartyWhatsappField<T extends PartyFieldsFormShape>({ role, register, errors, className }: FieldProps<T>) {
+  return (
+    <div className={`grid gap-1.5 ${className ?? ""}`}>
+      <Label htmlFor={`${role}-whatsapp`}>{PARTY_ROLE_LABELS[role]} WhatsApp Number</Label>
+      <Input
+        id={`${role}-whatsapp`}
+        {...register(`${role}.whatsapp_phone` as never)}
+        placeholder="+919876543210"
+        aria-invalid={!!errors?.whatsapp_phone}
+      />
+      {errors?.whatsapp_phone && <p className="text-sm text-destructive">{errors.whatsapp_phone.message}</p>}
     </div>
   );
 }

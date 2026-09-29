@@ -39,6 +39,11 @@ export function parsePhoneJson(value: unknown): PhoneEntry[] {
   return parsed.success ? parsed.data : [];
 }
 
+export function formatPhones(phone: { name?: string; phone: string }[]): string {
+  if (!phone.length) return "—";
+  return phone.map((p) => (p.name ? `${p.name}: ${p.phone}` : p.phone)).join(", ");
+}
+
 // Converts phone entries from any form (Create Current Entry, the party edit dialog) into
 // public.parties.phone's jsonb shape for insert/update: drops rows with no phone number, trims
 // name/phone, and omits "name" entirely when blank (matches the DB's optional-name shape) rather

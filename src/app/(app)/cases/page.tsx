@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CaseFilters } from "@/components/cases/case-filters";
 import { CaseStatusBadge } from "@/components/cases/status-badge";
 import { isCaseStatus } from "@/components/cases/constants";
+import { formatPhones, parsePhoneJson } from "@/components/cases/party-schema";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -42,7 +43,7 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
   let query = supabase
     .from("cases")
     .select(
-      "id, file_number, act, received_date, next_hearing_date, status, section_id, received_from_id",
+      "id, file_number, memo_number, subject, received_date, next_hearing_date, status, section_id, received_from_id, parties(role, name, phone, email, address)",
       { count: "exact" },
     );
 
@@ -124,37 +125,45 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>File Number</TableHead>
-                    <TableHead>Act</TableHead>
-                    <TableHead>Section</TableHead>
-                    <TableHead>Received From</TableHead>
-                    <TableHead>Received Date</TableHead>
-                    <TableHead>Next Hearing</TableHead>
-                    <TableHead>Status</TableHead>
+                    {COLUMNS.map((col, i) => (
+                      <TableHead key={col} className={i === 0 ? STICKY_CELL : undefined}>
+                        {col}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {cases.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">
-                        <Link href={`/cases/${c.id}`} className="hover:underline">
-                          {c.file_number}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{c.act || "—"}</TableCell>
-                      <TableCell>{c.section_id ? (sectionsById.get(c.section_id) ?? "—") : "—"}</TableCell>
-                      <TableCell>
-                        {c.received_from_id ? (receivedFromById.get(c.received_from_id) ?? "—") : "—"}
-                      </TableCell>
-                      <TableCell>{formatDateIST(c.received_date)}</TableCell>
-                      <TableCell>
-                        {c.next_hearing_date ? formatDateIST(c.next_hearing_date) : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <CaseStatusBadge status={c.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {cases.map((c) => {
+                    const applicant = c.parties.find((p) => p.role === "applicant");
+                    const management = c.parties.find((p) => p.role === "management");
+                    return (
+                      <TableRow key={c.id}>
+                        <TableCell className={`${STICKY_CELL} font-medium`}>
+                          <Link href={`/cases/${c.id}`} className="text-primary hover:underline">
+                            {c.file_number}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{c.memo_number || "—"}</TableCell>
+                        <TableCell>{applicant?.name || "—"}</TableCell>
+                        <TableCell>{applicant ? formatPhones(parsePhoneJson(applicant.phone)) : "—"}</TableCell>
+                        <TableCell>{applicant?.email || "—"}</TableCell>
+                        <LongCell text={applicant?.address} />
+                        <TableCell>{management ? formatPhones(parsePhoneJson(management.phone)) : "—"}</TableCell>
+                        <TableCell>{management?.email || "—"}</TableCell>
+                        <LongCell text={management?.address} />
+                        <TableCell>{c.section_id ? (sectionsById.get(c.section_id) ?? "—") : "—"}</TableCell>
+                        <TableCell>
+                          {c.received_from_id ? (receivedFromById.get(c.received_from_id) ?? "—") : "—"}
+                        </TableCell>
+                        <TableCell>{c.next_hearing_date ? formatDateIST(c.next_hearing_date) : "—"}</TableCell>
+                        <TableCell>
+                          <CaseStatusBadge status={c.status} />
+                        </TableCell>
+                        <LongCell text={c.subject} wide />
+                        <TableCell>{formatDateIST(c.received_date)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
 
@@ -178,6 +187,39 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Same columns, order and wording as the office's own register export.
+const COLUMNS = [
+  "File Number",
+  "Memo Number",
+  "Applicant Name",
+  "Applicant Phone",
+  "Applicant Email",
+  "Applicant Address",
+  "Management Phone",
+  "Management Email",
+  "Management Address",
+  "Section",
+  "Receive From",
+  "Hearing Date",
+  "Status",
+  "Subject",
+  "Submission Date",
+];
+
+// File Number stays pinned while the wide table scrolls sideways.
+const STICKY_CELL = "sticky left-0 z-10 bg-card shadow-[1px_0_0_var(--border)]";
+
+function LongCell({ text, wide }: { text: string | null | undefined; wide?: boolean }) {
+  if (!text) return <TableCell>—</TableCell>;
+  return (
+    <TableCell className={wide ? "max-w-md" : "max-w-56"}>
+      <span className="block truncate" title={text}>
+        {text}
+      </span>
+    </TableCell>
   );
 }
 

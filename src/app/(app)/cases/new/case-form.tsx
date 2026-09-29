@@ -1,24 +1,29 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Controller, useForm, type Path } from "react-hook-form";
+import { useState, useTransition, type ReactNode } from "react";
+import { Controller, useForm, type Control, type Path } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { partyFieldsDefaults, PartyFields, type PartyFieldsValues } from "@/components/cases/party-fields";
+import {
+  partyFieldsDefaults,
+  PartyAddressField,
+  PartyEmailField,
+  PartyNameField,
+  PartyPhonesField,
+  PartyWhatsappField,
+  type PartyFieldsValues,
+} from "@/components/cases/party-fields";
 import { CASE_STATUS_LABELS, CASE_STATUSES } from "@/components/cases/constants";
 import { createCaseSchema, type CreateCaseInput } from "../case-schema";
 import { createCase } from "./actions";
 
 type Lookup = { id: string; name: string };
 
-// RHF's own form state — distinct from CreateCaseInput (the Zod-validated submit shape), so this
-// file doesn't need to change shape if the two ever drift; today they match exactly (each phone
-// entry is {name, phone}), so onSubmit passes values straight into createCaseSchema.safeParse.
 type CaseFormValues = {
   file_number: string;
   act: string;
@@ -53,8 +58,57 @@ const emptyValues: CaseFormValues = {
   amount_recovered: "",
 };
 
-function toSubmitInput(values: CaseFormValues): CreateCaseInput {
-  return values;
+function FormSection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-4 border-t pt-6 first:border-t-0 first:pt-0 sm:grid-cols-2">
+      <div className="sm:col-span-2">
+        <h2 className="font-heading text-sm font-semibold">{title}</h2>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function FieldError({ message }: { message?: string }) {
+  return message ? <p className="text-sm text-destructive">{message}</p> : null;
+}
+
+function RequiredMark() {
+  return <span className="text-destructive" aria-hidden="true">*</span>;
+}
+
+function LookupSelect({
+  id,
+  name,
+  control,
+  options,
+}: {
+  id: string;
+  name: "section_id" | "received_from_id";
+  control: Control<CaseFormValues>;
+  options: Lookup[];
+}) {
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value ?? "")}>
+          <SelectTrigger id={id} className="w-full">
+            <SelectValue placeholder="Select…" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((o) => (
+              <SelectItem key={o.id} value={o.id}>
+                {o.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+    />
+  );
 }
 
 export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; receivedFrom: Lookup[] }) {
@@ -64,24 +118,16 @@ export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; recei
     register,
     handleSubmit,
     control,
-    watch,
     setError,
     formState: { errors },
   } = useForm<CaseFormValues>({ defaultValues: emptyValues });
 
-  // Applicant/Management sections only appear once a Section is chosen — matches the
-  // tapace.com reference form's flow. This is a UI convenience only: Section itself is still
-  // optional at the database/validation level, unchanged from before.
-  const sectionChosen = !!watch("section_id");
-
   const onSubmit = handleSubmit((values) => {
-    const submitInput = toSubmitInput(values);
-    const parsed = createCaseSchema.safeParse(submitInput);
+    const parsed = createCaseSchema.safeParse(values);
     if (!parsed.success) {
       setServerError("Please fix the highlighted fields.");
       for (const issue of parsed.error.issues) {
-        const key = issue.path.join(".") as Path<CaseFormValues>;
-        setError(key, { message: issue.message });
+        setError(issue.path.join(".") as Path<CaseFormValues>, { message: issue.message });
       }
       return;
     }
@@ -92,10 +138,8 @@ export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; recei
       if (result?.error) {
         setServerError(result.error);
         toast.error(result.error);
-        if (result.fieldErrors) {
-          for (const [field, message] of Object.entries(result.fieldErrors)) {
-            setError(field as Path<CaseFormValues>, { message });
-          }
+        for (const [field, message] of Object.entries(result.fieldErrors ?? {})) {
+          setError(field as Path<CaseFormValues>, { message });
         }
       }
     });
@@ -105,135 +149,56 @@ export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; recei
     <Card>
       <CardHeader>
         <CardTitle>Create Current Entry</CardTitle>
+        <CardDescription>
+          Fields follow the office register&apos;s column order. <RequiredMark /> marks required fields.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={onSubmit} className="grid gap-8">
-          <section className="grid gap-4 sm:grid-cols-2">
-            <h2 className="text-sm font-medium text-muted-foreground sm:col-span-2">Basic Information</h2>
-
+        <form onSubmit={onSubmit} className="grid gap-6" noValidate>
+          <FormSection title="Entry">
             <div className="grid gap-1.5">
-              <Label htmlFor="file_number">File Number</Label>
+              <Label htmlFor="file_number">
+                File Number <RequiredMark />
+              </Label>
               <Input id="file_number" {...register("file_number")} aria-invalid={!!errors.file_number} />
-              {errors.file_number && <p className="text-sm text-destructive">{errors.file_number.message}</p>}
+              <FieldError message={errors.file_number?.message} />
             </div>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="act">Act (optional)</Label>
-              <Input id="act" {...register("act")} placeholder="e.g. EC, ID, S&E — leave blank if not tracked" aria-invalid={!!errors.act} />
-              {errors.act && <p className="text-sm text-destructive">{errors.act.message}</p>}
-            </div>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="received_date">Received Date</Label>
-              <Input id="received_date" type="date" {...register("received_date")} aria-invalid={!!errors.received_date} />
-              {errors.received_date && <p className="text-sm text-destructive">{errors.received_date.message}</p>}
-            </div>
-
             <div className="grid gap-1.5">
               <Label htmlFor="memo_number">Memo Number</Label>
               <Input id="memo_number" {...register("memo_number")} />
             </div>
+          </FormSection>
 
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label htmlFor="subject">Subject</Label>
-              <Textarea id="subject" rows={3} {...register("subject")} />
-            </div>
+          <FormSection title="Applicant">
+            <PartyNameField<CaseFormValues> role="applicant" register={register} errors={errors.applicant} />
+            <PartyPhonesField<CaseFormValues> role="applicant" register={register} control={control} />
+            <PartyEmailField<CaseFormValues> role="applicant" register={register} errors={errors.applicant} />
+            <PartyAddressField<CaseFormValues> role="applicant" register={register} />
+          </FormSection>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="received_from_id">Received From</Label>
-              <Controller
-                control={control}
-                name="received_from_id"
-                render={({ field }) => (
-                  <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value ?? "")}>
-                    <SelectTrigger id="received_from_id" className="w-full">
-                      <SelectValue placeholder="Select…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {receivedFrom.map((r) => (
-                        <SelectItem key={r.id} value={r.id}>
-                          {r.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.received_from_id && <p className="text-sm text-destructive">{errors.received_from_id.message}</p>}
-            </div>
+          <FormSection title="Management" description="Management Name is optional — it's under Additional Details below.">
+            <PartyPhonesField<CaseFormValues> role="management" register={register} control={control} />
+            <PartyEmailField<CaseFormValues> role="management" register={register} errors={errors.management} />
+            <PartyAddressField<CaseFormValues> role="management" register={register} className="sm:col-span-2" />
+          </FormSection>
 
+          <FormSection title="Entry Details">
             <div className="grid gap-1.5">
               <Label htmlFor="section_id">Section</Label>
-              <Controller
-                control={control}
-                name="section_id"
-                render={({ field }) => (
-                  <Select value={field.value || undefined} onValueChange={(value) => field.onChange(value ?? "")}>
-                    <SelectTrigger id="section_id" className="w-full">
-                      <SelectValue placeholder="Select…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sections.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.section_id && <p className="text-sm text-destructive">{errors.section_id.message}</p>}
-              {!sectionChosen && (
-                <p className="text-xs text-muted-foreground">Choose a Section to enter Applicant and Management details.</p>
-              )}
-            </div>
-          </section>
-
-          {sectionChosen && (
-            <>
-              <section className="grid gap-4">
-                <h2 className="text-sm font-medium text-muted-foreground">Applicant Information</h2>
-                <PartyFields<CaseFormValues>
-                  role="applicant"
-                  namePrefix="applicant"
-                  register={register}
-                  control={control}
-                  errors={errors.applicant}
-                />
-              </section>
-
-              <section className="grid gap-4">
-                <h2 className="text-sm font-medium text-muted-foreground">Management Information</h2>
-                <PartyFields<CaseFormValues>
-                  role="management"
-                  namePrefix="management"
-                  register={register}
-                  control={control}
-                  errors={errors.management}
-                />
-              </section>
-            </>
-          )}
-
-          <section className="grid gap-4 sm:grid-cols-2">
-            <h2 className="text-sm font-medium text-muted-foreground sm:col-span-2">Additional Information</h2>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="remark_text">Remark Text</Label>
-              <Textarea id="remark_text" rows={2} {...register("remark_text")} />
+              <LookupSelect id="section_id" name="section_id" control={control} options={sections} />
+              <FieldError message={errors.section_id?.message} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="remark_url">URL</Label>
-              <Input id="remark_url" {...register("remark_url")} placeholder="Supporting link (optional)" />
+              <Label htmlFor="received_from_id">Receive From</Label>
+              <LookupSelect id="received_from_id" name="received_from_id" control={control} options={receivedFrom} />
+              <FieldError message={errors.received_from_id?.message} />
             </div>
-
             <div className="grid gap-1.5">
-              <Label htmlFor="next_hearing_date">Next Date of Hearing</Label>
+              <Label htmlFor="next_hearing_date">Hearing Date</Label>
               <Input id="next_hearing_date" type="date" {...register("next_hearing_date")} />
             </div>
-
             <div className="grid gap-1.5">
-              <Label htmlFor="status">Final Status</Label>
+              <Label htmlFor="status">Status</Label>
               <Controller
                 control={control}
                 name="status"
@@ -253,13 +218,46 @@ export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; recei
                 )}
               />
             </div>
-
-            <div className="grid gap-1.5">
-              <Label htmlFor="amount_recovered">Amount (₹)</Label>
-              <Input id="amount_recovered" inputMode="decimal" {...register("amount_recovered")} aria-invalid={!!errors.amount_recovered} />
-              {errors.amount_recovered && <p className="text-sm text-destructive">{errors.amount_recovered.message}</p>}
+            <div className="grid gap-1.5 sm:col-span-2">
+              <Label htmlFor="subject">Subject</Label>
+              <Textarea id="subject" rows={3} {...register("subject")} />
             </div>
-          </section>
+            <div className="grid gap-1.5">
+              <Label htmlFor="received_date">
+                Submission Date <RequiredMark />
+              </Label>
+              <Input id="received_date" type="date" {...register("received_date")} aria-invalid={!!errors.received_date} />
+              <FieldError message={errors.received_date?.message} />
+            </div>
+          </FormSection>
+
+          <FormSection title="Additional Details" description="Optional — not in the office register, used by this app.">
+            <div className="grid gap-1.5">
+              <Label htmlFor="act">Act</Label>
+              <Input id="act" {...register("act")} placeholder="e.g. EC, ID, S&E" />
+            </div>
+            <PartyNameField<CaseFormValues> role="management" register={register} errors={errors.management} />
+            <PartyWhatsappField<CaseFormValues> role="applicant" register={register} errors={errors.applicant} />
+            <PartyWhatsappField<CaseFormValues> role="management" register={register} errors={errors.management} />
+            <div className="grid gap-1.5">
+              <Label htmlFor="remark_text">Remark</Label>
+              <Textarea id="remark_text" rows={2} {...register("remark_text")} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="remark_url">Remark URL</Label>
+              <Input id="remark_url" {...register("remark_url")} placeholder="Supporting link" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="amount_recovered">Amount Recovered (₹)</Label>
+              <Input
+                id="amount_recovered"
+                inputMode="decimal"
+                {...register("amount_recovered")}
+                aria-invalid={!!errors.amount_recovered}
+              />
+              <FieldError message={errors.amount_recovered?.message} />
+            </div>
+          </FormSection>
 
           {serverError && (
             <p role="alert" className="text-sm text-destructive">
@@ -267,8 +265,8 @@ export function CaseForm({ sections, receivedFrom }: { sections: Lookup[]; recei
             </p>
           )}
 
-          <div>
-            <Button type="submit" disabled={pending}>
+          <div className="flex justify-end border-t pt-6">
+            <Button type="submit" size="lg" disabled={pending}>
               {pending ? "Creating…" : "Create Current Entry"}
             </Button>
           </div>

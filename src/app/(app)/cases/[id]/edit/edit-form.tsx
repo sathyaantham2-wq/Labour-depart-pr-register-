@@ -72,7 +72,7 @@ export function EditCaseForm({
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="received_from_id">Received From</Label>
+            <Label htmlFor="received_from_id">Receive From</Label>
             <Controller
               control={control}
               name="received_from_id"

@@ -22,6 +22,40 @@ const ADMIN_SCREENS = [
   { path: "/data-import", heading: "Data Import" },
 ];
 
+// The office register's column order — both the form and the list must follow it.
+const REGISTER_COLUMNS = [
+  "File Number",
+  "Memo Number",
+  "Applicant Name",
+  "Applicant Phone",
+  "Applicant Email",
+  "Applicant Address",
+  "Management Phone",
+  "Management Email",
+  "Management Address",
+  "Section",
+  "Receive From",
+  "Hearing Date",
+  "Status",
+  "Subject",
+  "Submission Date",
+];
+
+test.describe("office register layout", () => {
+  test("Create Current Entry form fields follow the register order", async ({ page }) => {
+    await page.goto("/cases/new");
+    const labels = (await page.locator("form label").allInnerTexts()).map((t) => t.replace("*", "").trim());
+    expect(labels.filter((l) => REGISTER_COLUMNS.includes(l))).toEqual(REGISTER_COLUMNS);
+  });
+
+  test("Current Entries list columns follow the register order", async ({ page }) => {
+    await page.goto("/cases");
+    const table = page.locator("table");
+    test.skip((await table.count()) === 0, "No entries yet, so no table is shown.");
+    expect(await table.locator("thead th").allInnerTexts()).toEqual(REGISTER_COLUMNS);
+  });
+});
+
 test.describe("signed in", () => {
   test("app shell shows sidebar, user and sign-out", async ({ page }) => {
     await page.goto("/dashboard");

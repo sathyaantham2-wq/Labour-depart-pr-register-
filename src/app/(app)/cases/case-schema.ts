@@ -12,53 +12,64 @@ const entryPhoneEntrySchema = phoneEntrySchema.extend({
   phone: z.string().trim(),
 });
 
-const entryPartySchema = z
+const entryPartySchema = z.object({
+  name: z.string().trim().max(200).optional().or(z.literal("")),
+  phone: z.array(entryPhoneEntrySchema).default([]),
+  whatsapp_phone: z
+    .string()
+    .trim()
+    .regex(WHATSAPP_PHONE_REGEX, "Use E.164 format, e.g. +919876543210.")
+    .optional()
+    .or(z.literal("")),
+  email: z.string().trim().email("Enter a valid email address.").optional().or(z.literal("")),
+  address: z.string().trim().max(500).optional().or(z.literal("")),
+});
+export type EntryPartyInput = z.infer<typeof entryPartySchema>;
+
+export function partyHasDetails(party: EntryPartyInput): boolean {
+  return !!(
+    party.name ||
+    party.phone.some((p) => p.phone.trim()) ||
+    party.whatsapp_phone ||
+    party.email ||
+    party.address
+  );
+}
+
+// The office register has no Management Name column, so management details may be entered
+// without one; the DB requires a non-empty party name, so this fallback is stored instead.
+export const DEFAULT_MANAGEMENT_NAME = "Management";
+
+// The combined "Create Current Entry" form, laid out in the office register's column order
+// (File Number … Submission Date), with extras (Act, Management Name, WhatsApp, Remark,
+// Amount) in an Additional section. One page, one submit.
+export const createCaseSchema = z
   .object({
-    name: z.string().trim().max(200).optional().or(z.literal("")),
-    phone: z.array(entryPhoneEntrySchema).default([]),
-    whatsapp_phone: z
-      .string()
-      .trim()
-      .regex(WHATSAPP_PHONE_REGEX, "Use E.164 format, e.g. +919876543210.")
-      .optional()
-      .or(z.literal("")),
-    email: z.string().trim().email("Enter a valid email address.").optional().or(z.literal("")),
-    address: z.string().trim().max(500).optional().or(z.literal("")),
+    file_number: z.string().trim().min(1, "Enter a file number.").max(100),
+    act: z.string().trim().max(100).optional().or(z.literal("")),
+    received_date: z.string().trim().min(1, "Enter the submission date."),
+    memo_number: z.string().trim().max(100).optional().or(z.literal("")),
+    subject: z.string().trim().max(500).optional().or(z.literal("")),
+    received_from_id: z.string().uuid("Select a Receive From.").optional().or(z.literal("")),
+    section_id: z.string().uuid("Select a Section.").optional().or(z.literal("")),
+    applicant: entryPartySchema,
+    management: entryPartySchema,
+    remark_text: z.string().trim().max(2000).optional().or(z.literal("")),
+    remark_url: z.string().trim().max(500).optional().or(z.literal("")),
+    next_hearing_date: z.string().trim().optional().or(z.literal("")),
+    status: z.enum(CASE_STATUSES),
+    amount_recovered: z.string().trim().optional().or(z.literal("")),
   })
   .superRefine((data, ctx) => {
-    const hasOtherDetail =
-      data.phone.some((p) => p.phone.trim()) || data.whatsapp_phone || data.email || data.address;
-    if (hasOtherDetail && !data.name) {
-      ctx.addIssue({ code: "custom", path: ["name"], message: "Enter a name." });
+    if (partyHasDetails(data.applicant) && !data.applicant.name) {
+      ctx.addIssue({ code: "custom", path: ["applicant", "name"], message: "Enter the applicant's name." });
     }
   });
-
-// The combined "Create Current Entry" form: Basic Info + Applicant + Management + Remarks +
-// Next Hearing Date + Final Status + Amount, all submitted together (matches the tapace.com
-// reference form — one page, one submit, rather than adding parties/hearings/remarks
-// separately afterward on the case detail page, which remains possible too for later edits).
-export const createCaseSchema = z.object({
-  file_number: z.string().trim().min(1, "Enter a file number.").max(100),
-  act: z.string().trim().max(100).optional().or(z.literal("")),
-  received_date: z.string().trim().min(1, "Enter the received date."),
-  memo_number: z.string().trim().max(100).optional().or(z.literal("")),
-  subject: z.string().trim().max(500).optional().or(z.literal("")),
-  received_from_id: z.string().uuid("Select a Received From.").optional().or(z.literal("")),
-  section_id: z.string().uuid("Select a Section.").optional().or(z.literal("")),
-  applicant: entryPartySchema,
-  management: entryPartySchema,
-  remark_text: z.string().trim().max(2000).optional().or(z.literal("")),
-  remark_url: z.string().trim().max(500).optional().or(z.literal("")),
-  next_hearing_date: z.string().trim().optional().or(z.literal("")),
-  status: z.enum(CASE_STATUSES),
-  amount_recovered: z.string().trim().optional().or(z.literal("")),
-});
 export type CreateCaseInput = z.infer<typeof createCaseSchema>;
-export type EntryPartyInput = z.infer<typeof entryPartySchema>;
 
 export const editCaseSchema = z
   .object({
-    received_from_id: z.string().uuid("Select a Received From.").optional().or(z.literal("")),
+    received_from_id: z.string().uuid("Select a Receive From.").optional().or(z.literal("")),
     section_id: z.string().uuid("Select a Section.").optional().or(z.literal("")),
     status: z.enum(CASE_STATUSES),
     forwarded_to: z.string().trim().max(200).optional().or(z.literal("")),

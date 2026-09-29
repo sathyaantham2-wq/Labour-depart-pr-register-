@@ -75,7 +75,7 @@ export function CaseFilters({
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="filter-received-from">Received From</Label>
+            <Label htmlFor="filter-received-from">Receive From</Label>
             <select
               id="filter-received-from"
               name="received_from_id"

@@ -1,11 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PARTY_ROLE_LABELS, type PartyRole } from "./constants";
 import { PartyForm, type PartyRecord } from "./party-form";
-
-function formatPhones(phone: PartyRecord["phone"]): string {
-  if (!phone.length) return "—";
-  return phone.map((p) => (p.name ? `${p.name}: ${p.phone}` : p.phone)).join(", ");
-}
+import { formatPhones } from "./party-schema";
 
 export function PartyCard({
   caseId,

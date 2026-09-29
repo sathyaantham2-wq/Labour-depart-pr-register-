@@ -1,7 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createCaseSchema, type CreateCaseInput, type EntryPartyInput } from "../case-schema";
+import {
+  createCaseSchema,
+  DEFAULT_MANAGEMENT_NAME,
+  partyHasDetails,
+  type CreateCaseInput,
+  type EntryPartyInput,
+} from "../case-schema";
 import { toPhoneJson } from "@/components/cases/party-schema";
 import { createClient } from "@/lib/supabase/server";
 
@@ -86,9 +92,12 @@ export async function createCase(input: CreateCaseInput): Promise<CreateCaseResu
 
   if (caseError) {
     if (caseError.code === "23505") {
-      return { error: "A case with this file number already exists." };
+      return {
+        error: "An entry with this file number already exists.",
+        fieldErrors: { file_number: "This file number is already in use." },
+      };
     }
-    return { error: "Could not create the case. Please try again." };
+    return { error: "Could not create the entry. Please try again." };
   }
 
   const caseId: string = caseRow.id;
@@ -97,8 +106,9 @@ export async function createCase(input: CreateCaseInput): Promise<CreateCaseResu
     const { error } = await supabase.from("parties").insert(partyInsert(caseId, "applicant", applicant));
     if (error) console.error("createCase: failed to save applicant", error);
   }
-  if ((management.name ?? "").trim()) {
-    const { error } = await supabase.from("parties").insert(partyInsert(caseId, "management", management));
+  if (partyHasDetails(management)) {
+    const withName = { ...management, name: (management.name ?? "").trim() || DEFAULT_MANAGEMENT_NAME };
+    const { error } = await supabase.from("parties").insert(partyInsert(caseId, "management", withName));
     if (error) console.error("createCase: failed to save management", error);
   }
   const remarkText = (remark_text ?? "").trim();
