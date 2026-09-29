@@ -148,6 +148,8 @@ function DashboardStats({
   sectionNames: Map<string, string>;
 }) {
   const { totals, bySection } = stats;
+  const list = (extra: Record<string, string>) =>
+    `/cases?${new URLSearchParams({ year: String(year), ...extra }).toString()}`;
 
   const byAct = new Map<string, { key: string; sectionId: string | null; bucket: YearBucket }[]>();
   for (const [key, bucket] of bySection) {
@@ -167,18 +169,38 @@ function DashboardStats({
         <KpiCard
           label={`Brought forward from ${year - 1}`}
           value={totals.broughtForward}
+          href={list({ year_scope: "brought_forward" })}
           icon={ArrowRightToLineIcon}
           tone="accent"
         />
-        <KpiCard label={`Received in ${year}`} value={totals.received} icon={InboxIcon} tone="primary" />
-        <KpiCard label={`Total in ${year}`} value={totals.total} icon={FolderKanbanIcon} tone="primary" />
-        <KpiCard label="Open" value={totals.open} icon={FolderOpenIcon} tone="warning" />
-        <KpiCard label={`Closed in ${year}`} value={totals.closed} icon={CircleCheckIcon} tone="success" />
-        <KpiCard label="Forwarded" value={totals.forwarded} icon={SendIcon} tone="accent" />
+        <KpiCard
+          label={`Received in ${year}`}
+          value={totals.received}
+          href={list({ year_scope: "received" })}
+          icon={InboxIcon}
+          tone="primary"
+        />
+        <KpiCard label={`Total in ${year}`} value={totals.total} href={list({})} icon={FolderKanbanIcon} tone="primary" />
+        <KpiCard label="Open" value={totals.open} href={list({ status: "open" })} icon={FolderOpenIcon} tone="warning" />
+        <KpiCard
+          label={`Closed in ${year}`}
+          value={totals.closed}
+          href={list({ status: "closed" })}
+          icon={CircleCheckIcon}
+          tone="success"
+        />
+        <KpiCard
+          label="Forwarded"
+          value={totals.forwarded}
+          href={list({ status: "forwarded" })}
+          icon={SendIcon}
+          tone="accent"
+        />
         <div className="sm:col-span-2 lg:col-span-3">
           <KpiCard
             label={`Amount recovered in entries closed in ${year}`}
             value={formatRupees(totals.recovered)}
+            href={list({ status: "closed" })}
             icon={IndianRupeeIcon}
             tone="success"
           />
@@ -225,15 +247,16 @@ function KpiCard({
   value,
   icon: Icon,
   tone,
+  href,
 }: {
+  href?: string;
   label: string;
   value: number | string;
   icon: LucideIcon;
   tone: keyof typeof KPI_TONE_CLASSES;
 }) {
-  return (
-    <div className="lift-3d rounded-xl">
-      <Card className="relative h-full overflow-hidden">
+  const card = (
+    <Card className="relative h-full overflow-hidden">
         <div
           aria-hidden
           className={cn(
@@ -256,7 +279,13 @@ function KpiCard({
           </div>
         </CardContent>
       </Card>
-    </div>
+  );
+  return href ? (
+    <Link href={href} className="lift-3d block rounded-xl">
+      {card}
+    </Link>
+  ) : (
+    <div className="lift-3d rounded-xl">{card}</div>
   );
 }
 

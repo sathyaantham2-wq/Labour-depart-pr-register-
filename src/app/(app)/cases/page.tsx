@@ -88,8 +88,11 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
       {filters.year !== undefined && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 text-sm">
           <span>
-            Showing the {filters.year} view: entries received up to 31 Dec {filters.year} and not closed before
-            1 Jan {filters.year} (including those carried forward).
+            {filters.yearScope === "brought_forward"
+              ? `Showing entries brought forward into ${filters.year} (received earlier, not closed before 1 Jan ${filters.year}).`
+              : filters.yearScope === "received"
+                ? `Showing entries received in ${filters.year}.`
+                : `Showing the ${filters.year} view: entries received up to 31 Dec ${filters.year} and not closed before 1 Jan ${filters.year}, including those carried forward.`}
           </span>
           <Link href="/cases" className="font-medium text-primary hover:underline">
             Show all entries

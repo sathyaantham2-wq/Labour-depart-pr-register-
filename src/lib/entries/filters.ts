@@ -22,6 +22,8 @@ export type EntryFilters = {
   // (i.e. includes those carried forward from earlier years). With a status, that status is as at
   // the end of the year — see year-stats.ts.
   year?: number;
+  // With `year`: only entries carried forward from earlier years, or only those received in it.
+  yearScope?: "brought_forward" | "received";
 };
 
 export const PENDING_ALERT_DAYS = 60;
@@ -52,6 +54,10 @@ export function parseEntryFilters(sp: RawParams): EntryFilters {
     noHearing: first(sp.no_hearing) === "1" || undefined,
     olderThanDays: /^\d{1,4}$/.test(first(sp.older_than) ?? "") ? Number(first(sp.older_than)) : undefined,
     year: /^(19|20)\d{2}$/.test(first(sp.year) ?? "") ? Number(first(sp.year)) : undefined,
+    yearScope:
+      first(sp.year_scope) === "brought_forward" || first(sp.year_scope) === "received"
+        ? (first(sp.year_scope) as "brought_forward" | "received")
+        : undefined,
   };
 }
 
@@ -76,6 +82,8 @@ export function applyEntryFilters<T extends Filterable<T>>(query: T, f: EntryFil
     const start = `${f.year}-01-01`;
     const end = `${f.year}-12-31`;
     q = q.lte("received_date", end).or(`closed_at.is.null,closed_at.gte.${start}`);
+    if (f.yearScope === "brought_forward") q = q.lt("received_date", start);
+    if (f.yearScope === "received") q = q.gte("received_date", start);
     if (f.status === "closed") q = q.eq("status", "closed").gte("closed_at", start).lte("closed_at", end);
     else if (f.status === "open") q = q.or(`status.eq.open,closed_at.gt.${end}`);
     else if (f.status === "forwarded") q = q.eq("status", "forwarded");
