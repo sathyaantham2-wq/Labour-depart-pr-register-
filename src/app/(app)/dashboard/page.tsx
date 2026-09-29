@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  ArrowRightToLineIcon,
   FolderKanbanIcon,
   FolderOpenIcon,
   CircleCheckIcon,
   IndianRupeeIcon,
+  InboxIcon,
   SendIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -16,24 +17,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "cn";
 import { formatLong, todayIST } from "@/lib/calendar-dates";
+import { availableYears, computeYearStats, parseYear, type YearBucket, type YearCaseRow } from "@/lib/entries/year-stats";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
-
-// Shape of public.dashboard_stats, added by a parallel db-architect migration
-// (see CLAUDE.md — RLS scopes rows to the caller: admins see every section,
-// staff see only their own cases' counts). Defined locally since it isn't in
-// the generated src/types/database.ts yet — regenerating that file mid-way
-// through a parallel migration would race with the db-architect agent.
-type DashboardStatRow = {
-  act: string | null;
-  section_id: string | null;
-  section_name: string | null;
-  total: number | null;
-  open: number | null;
-  closed: number | null;
-  forwarded: number | null;
-};
 
 const STAT_LINKS = [
   { key: "total", label: "Total", status: undefined },
@@ -42,45 +29,39 @@ const STAT_LINKS = [
   { key: "forwarded", label: "Forwarded", status: "forwarded" },
 ] as const;
 
-type Recovered = { total: number; bySection: Map<string, number> };
-
-// Sums amount_recovered on closed entries (RLS-scoped: staff see only their own entries).
-async function loadRecovered(supabase: SupabaseClient): Promise<Recovered> {
-  const recovered: Recovered = { total: 0, bySection: new Map() };
+// All non-deleted entries, RLS-scoped: admins see everything, staff only their own.
+async function loadYearRows(supabase: Awaited<ReturnType<typeof createClient>>): Promise<YearCaseRow[] | null> {
+  const rows: YearCaseRow[] = [];
   const PAGE = 1000;
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from("cases")
-      .select("section_id, amount_recovered")
-      .eq("status", "closed")
+      .select("act, section_id, status, received_date, closed_at, amount_recovered")
       .is("deleted_at", null)
-      .not("amount_recovered", "is", null)
       .order("id")
       .range(from, from + PAGE - 1);
-    if (error || !data) break;
-    for (const row of data as { section_id: string | null; amount_recovered: number | string }[]) {
-      const amount = Number(row.amount_recovered);
-      recovered.total += amount;
-      if (row.section_id) recovered.bySection.set(row.section_id, (recovered.bySection.get(row.section_id) ?? 0) + amount);
-    }
+    if (error || !data) return null;
+    rows.push(...(data as YearCaseRow[]));
     if (data.length < PAGE) break;
   }
-  return recovered;
+  return rows;
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
+  const sp = await searchParams;
   const supabase = await createClient();
-  const recovered = await loadRecovered(supabase as unknown as SupabaseClient);
+  const today = todayIST();
+  const currentYear = Number(today.slice(0, 4));
+  const year = parseYear(Array.isArray(sp.year) ? sp.year[0] : sp.year, currentYear);
 
-  // dashboard_stats may not exist yet (a parallel migration is adding it) —
-  // query defensively and fall back to a friendly message instead of
-  // crashing. Cast to the untyped client since the view isn't in the
-  // generated Database type.
-  const { data, error } = await (supabase as unknown as SupabaseClient)
-    .from("dashboard_stats")
-    .select("*");
-
-  const rows = (data ?? []) as DashboardStatRow[];
+  const [rows, { data: sections }] = await Promise.all([
+    loadYearRows(supabase),
+    supabase.from("sections").select("id, name").order("name"),
+  ]);
+  const sectionNames = new Map((sections ?? []).map((s) => [s.id, s.name]));
+  const years = rows ? availableYears(rows, currentYear) : [currentYear];
+  if (!years.includes(year)) years.unshift(year);
+  const stats = rows ? computeYearStats(rows, year) : null;
 
   return (
     <div className="grid gap-6">
@@ -89,10 +70,11 @@ export default async function DashboardPage() {
         <div className="animate-float-slow pointer-events-none absolute -right-2 -bottom-16 size-40 rounded-full bg-gradient-to-tr from-vivid-pink/50 to-transparent [animation-delay:-4s]" />
         <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-medium tracking-wide text-white/70 uppercase">{formatLong(todayIST())}</p>
-            <h1 className="mt-1 font-heading text-3xl font-semibold tracking-tight drop-shadow-sm">Dashboard</h1>
+            <p className="text-xs font-medium tracking-wide text-white/70 uppercase">{formatLong(today)}</p>
+            <h1 className="mt-1 font-heading text-3xl font-semibold tracking-tight drop-shadow-sm">Dashboard {year}</h1>
             <p className="mt-1 max-w-xl text-sm text-white/75">
-              Entry counts by Act and Section. Click a number to see the matching entries.
+              Entry counts by Act and Section for {year}. Entries not closed by the end of {year - 1} are carried
+              forward automatically. Click a number to see the matching entries.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -114,15 +96,34 @@ export default async function DashboardPage() {
 
       <AttentionPanel />
 
-      {error ? (
+      <nav aria-label="Year" className="flex flex-wrap items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Year</span>
+        {years.map((y) => (
+          <Link
+            key={y}
+            href={y === currentYear ? "/dashboard" : `/dashboard?year=${y}`}
+            aria-current={y === year ? "page" : undefined}
+            className={cn(
+              "inline-flex h-8 items-center rounded-full border px-3.5 text-sm font-medium tabular-nums transition-colors",
+              y === year
+                ? "border-transparent bg-primary text-primary-foreground shadow-elevation-1"
+                : "border-border bg-card hover:border-primary/40 hover:bg-accent/60",
+            )}
+          >
+            {y}
+          </Link>
+        ))}
+      </nav>
+
+      {!stats ? (
         <p role="alert" className="text-sm text-muted-foreground">
           Stats aren&apos;t available yet — check back shortly.
         </p>
-      ) : rows.length === 0 ? (
+      ) : stats.totals.total === 0 ? (
         <Card>
           <EmptyState
-            title="No entries yet"
-            description="Once entries are added, counts by Act and Section will appear here."
+            title={`No entries in ${year}`}
+            description="Nothing was received in this year and nothing was carried forward into it."
             action={
               <Link href="/cases/new" className={buttonVariants({ size: "sm" })}>
                 New Entry
@@ -131,57 +132,68 @@ export default async function DashboardPage() {
           />
         </Card>
       ) : (
-        <DashboardStats rows={rows} recovered={recovered} />
+        <DashboardStats year={year} stats={stats} sectionNames={sectionNames} />
       )}
     </div>
   );
 }
 
-function DashboardStats({ rows, recovered }: { rows: DashboardStatRow[]; recovered: Recovered }) {
-  const byAct = new Map<string, DashboardStatRow[]>();
-  const totals = { total: 0, open: 0, closed: 0, forwarded: 0 };
-  for (const row of rows) {
-    const act = row.act ?? "Unspecified";
+function DashboardStats({
+  year,
+  stats,
+  sectionNames,
+}: {
+  year: number;
+  stats: ReturnType<typeof computeYearStats>;
+  sectionNames: Map<string, string>;
+}) {
+  const { totals, bySection } = stats;
+
+  const byAct = new Map<string, { key: string; sectionId: string | null; bucket: YearBucket }[]>();
+  for (const [key, bucket] of bySection) {
+    const [rawAct, sectionId] = key.split("|");
+    const act = rawAct || "Unspecified";
     const list = byAct.get(act) ?? [];
-    list.push(row);
+    list.push({ key, sectionId: sectionId || null, bucket });
     byAct.set(act, list);
-    totals.total += row.total ?? 0;
-    totals.open += row.open ?? 0;
-    totals.closed += row.closed ?? 0;
-    totals.forwarded += row.forwarded ?? 0;
   }
+  const nameOf = (id: string | null) => (id ? (sectionNames.get(id) ?? "Section") : "No section");
+  const acts = [...byAct.entries()].sort(([a], [b]) => a.localeCompare(b));
+  for (const [, list] of acts) list.sort((a, b) => nameOf(a.sectionId).localeCompare(nameOf(b.sectionId)));
 
   return (
     <div className="grid gap-8">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Total Entries" value={totals.total} icon={FolderKanbanIcon} tone="primary" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <KpiCard
+          label={`Brought forward from ${year - 1}`}
+          value={totals.broughtForward}
+          icon={ArrowRightToLineIcon}
+          tone="accent"
+        />
+        <KpiCard label={`Received in ${year}`} value={totals.received} icon={InboxIcon} tone="primary" />
+        <KpiCard label={`Total in ${year}`} value={totals.total} icon={FolderKanbanIcon} tone="primary" />
         <KpiCard label="Open" value={totals.open} icon={FolderOpenIcon} tone="warning" />
-        <KpiCard label="Closed" value={totals.closed} icon={CircleCheckIcon} tone="success" />
+        <KpiCard label={`Closed in ${year}`} value={totals.closed} icon={CircleCheckIcon} tone="success" />
         <KpiCard label="Forwarded" value={totals.forwarded} icon={SendIcon} tone="accent" />
-        <div className="sm:col-span-2 lg:col-span-4">
+        <div className="sm:col-span-2 lg:col-span-3">
           <KpiCard
-            label="Amount recovered in closed entries"
-            value={formatRupees(recovered.total)}
+            label={`Amount recovered in entries closed in ${year}`}
+            value={formatRupees(totals.recovered)}
             icon={IndianRupeeIcon}
             tone="success"
           />
         </div>
       </div>
 
-      {[...byAct.entries()].map(([act, sectionRows]) => (
+      {acts.map(([act, sectionRows]) => (
         <div key={act} className="grid gap-3">
           <h2 className="flex items-center gap-2.5 font-heading text-lg font-semibold tracking-tight">
             <span aria-hidden className="h-5 w-1.5 rounded-full bg-gradient-to-b from-primary to-vivid-pink" />
             {act}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {sectionRows.map((row, index) => (
-              <SectionCard
-                key={row.section_id ?? `${act}-${row.section_name ?? index}`}
-                row={row}
-                act={act}
-                recovered={row.section_id ? (recovered.bySection.get(row.section_id) ?? 0) : 0}
-              />
+            {sectionRows.map(({ key, sectionId, bucket }) => (
+              <SectionCard key={key} name={nameOf(sectionId)} sectionId={sectionId} act={act} year={year} bucket={bucket} />
             ))}
           </div>
         </div>
@@ -254,44 +266,65 @@ const STAT_TONE_CLASSES: Record<string, string> = {
   forwarded: "bg-accent hover:bg-accent/70",
 };
 
-function SectionCard({ row, act, recovered }: { row: DashboardStatRow; act: string; recovered: number }) {
+function SectionCard({
+  name,
+  sectionId,
+  act,
+  year,
+  bucket,
+}: {
+  name: string;
+  sectionId: string | null;
+  act: string;
+  year: number;
+  bucket: YearBucket;
+}) {
   return (
     <div className="lift-3d rounded-xl">
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>{row.section_name ?? "Section"}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          {STAT_LINKS.map(({ key, label, status }) => {
-            const value = row[key];
-            const params = new URLSearchParams();
-            if (row.section_id) params.set("section_id", row.section_id);
-            if (status) params.set("status", status);
-            params.set("act", act);
-            return (
-              <Link
-                key={key}
-                href={`/cases?${params.toString()}`}
-                className={cn(
-                  "flex flex-col rounded-lg border border-transparent p-2 transition-colors",
-                  status ? STAT_TONE_CLASSES[status] : "bg-muted hover:bg-muted/70",
-                )}
-              >
-                <span className="text-xs text-muted-foreground">{label}</span>
-                <span className="text-lg font-semibold tabular-nums">{value ?? 0}</span>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="mt-3 flex items-center justify-between rounded-lg bg-success/10 px-2.5 py-1.5 text-xs">
-          <span className="text-muted-foreground">Recovered (closed)</span>
-          <span className="font-semibold text-[color-mix(in_oklch,var(--success),black_25%)] tabular-nums dark:text-success">
-            {formatRupees(recovered)}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle>{name}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            {STAT_LINKS.map(({ key, label, status }) => {
+              const params = new URLSearchParams();
+              if (sectionId) params.set("section_id", sectionId);
+              if (status) params.set("status", status);
+              params.set("act", act);
+              params.set("year", String(year));
+              return (
+                <Link
+                  key={key}
+                  href={`/cases?${params.toString()}`}
+                  className={cn(
+                    "flex flex-col rounded-lg border border-transparent p-2 transition-colors",
+                    status ? STAT_TONE_CLASSES[status] : "bg-muted hover:bg-muted/70",
+                  )}
+                >
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <span className="text-lg font-semibold tabular-nums">{bucket[key]}</span>
+                </Link>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              Brought forward{" "}
+              <span className="font-semibold text-foreground tabular-nums">{bucket.broughtForward}</span>
+            </span>
+            <span>
+              Received <span className="font-semibold text-foreground tabular-nums">{bucket.received}</span>
+            </span>
+          </div>
+          <div className="mt-2 flex items-center justify-between rounded-lg bg-success/10 px-2.5 py-1.5 text-xs">
+            <span className="text-muted-foreground">Recovered (closed)</span>
+            <span className="font-semibold text-[color-mix(in_oklch,var(--success),black_25%)] tabular-nums dark:text-success">
+              {formatRupees(bucket.recovered)}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

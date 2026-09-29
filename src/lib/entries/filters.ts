@@ -18,6 +18,10 @@ export type EntryFilters = {
   // "Needs attention" shortcuts from the Dashboard (both imply status = open).
   noHearing?: boolean;
   olderThanDays?: number;
+  // Dashboard year view: entries received by 31 Dec of this year that were not closed before 1 Jan
+  // (i.e. includes those carried forward from earlier years). With a status, that status is as at
+  // the end of the year — see year-stats.ts.
+  year?: number;
 };
 
 export const PENDING_ALERT_DAYS = 60;
@@ -47,6 +51,7 @@ export function parseEntryFilters(sp: RawParams): EntryFilters {
     to: to && DATE_RE.test(to) ? to : undefined,
     noHearing: first(sp.no_hearing) === "1" || undefined,
     olderThanDays: /^\d{1,4}$/.test(first(sp.older_than) ?? "") ? Number(first(sp.older_than)) : undefined,
+    year: /^(19|20)\d{2}$/.test(first(sp.year) ?? "") ? Number(first(sp.year)) : undefined,
   };
 }
 
@@ -67,7 +72,14 @@ export function applyEntryFilters<T extends Filterable<T>>(query: T, f: EntryFil
   if (f.act) q = q.ilike("act", `%${f.act}%`);
   if (f.sectionId) q = q.eq("section_id", f.sectionId);
   if (f.receivedFromId) q = q.eq("received_from_id", f.receivedFromId);
-  if (f.status) q = q.eq("status", f.status);
+  if (f.year !== undefined) {
+    const start = `${f.year}-01-01`;
+    const end = `${f.year}-12-31`;
+    q = q.lte("received_date", end).or(`closed_at.is.null,closed_at.gte.${start}`);
+    if (f.status === "closed") q = q.eq("status", "closed").gte("closed_at", start).lte("closed_at", end);
+    else if (f.status === "open") q = q.or(`status.eq.open,closed_at.gt.${end}`);
+    else if (f.status === "forwarded") q = q.eq("status", "forwarded");
+  } else if (f.status) q = q.eq("status", f.status);
   if (f.from) q = q.gte("next_hearing_date", f.from);
   if (f.to) q = q.lte("next_hearing_date", f.to);
   if (f.noHearing || f.olderThanDays !== undefined) q = q.eq("status", "open");

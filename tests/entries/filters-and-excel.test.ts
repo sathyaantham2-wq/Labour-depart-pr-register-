@@ -31,3 +31,11 @@ describe("parseEntryFilters", () => {
     expect(REGISTER_COLUMNS[14]).toBe("Submission Date");
   });
 });
+
+describe("year filter", () => {
+  it("accepts a four-digit year and ignores junk", () => {
+    expect(parseEntryFilters({ year: "2026" }).year).toBe(2026);
+    expect(parseEntryFilters({ year: "26" }).year).toBeUndefined();
+    expect(parseEntryFilters({ year: "abcd" }).year).toBeUndefined();
+  });
+});
