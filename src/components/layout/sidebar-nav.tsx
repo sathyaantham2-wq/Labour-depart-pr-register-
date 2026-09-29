@@ -16,13 +16,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
-
-export type NavItem = { href: string; label: string };
+import type { NavItem } from "./nav-items";
 
 // Icon components can't cross the server/client boundary as props (React
 // Server Components can't serialize function references), so the lookup
 // lives entirely inside this client module, keyed by href.
-const ICONS: Record<string, LucideIcon> = {
+export const NAV_ICONS: Record<string, LucideIcon> = {
   "/dashboard": LayoutDashboardIcon,
   "/cases": FolderKanbanIcon,
   "/sections": ListTreeIcon,
@@ -41,7 +40,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
     <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:flex-col md:gap-0.5 md:pb-0">
       {items.map((item) => {
         const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-        const Icon = ICONS[item.href] ?? CircleIcon;
+        const Icon = NAV_ICONS[item.href] ?? CircleIcon;
         return (
           <Link
             key={item.href}

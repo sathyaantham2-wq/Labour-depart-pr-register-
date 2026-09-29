@@ -62,7 +62,7 @@ export default async function CaseDetailsPage({ params }: PageProps<"/cases/[id]
         <div className="flex flex-wrap items-center gap-2">
           <CaseStatusBadge status={caseRow.status} />
           <Link href={`/cases/${id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Edit Case
+            Edit Entry
           </Link>
           <Link href={`/cases/${id}/notice`} className={buttonVariants({ size: "sm" })}>
             Print Notice / Download DOCX

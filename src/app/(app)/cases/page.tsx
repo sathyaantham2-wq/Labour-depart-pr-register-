@@ -6,6 +6,7 @@ import { CaseStatusBadge } from "@/components/cases/status-badge";
 import { isCaseStatus } from "@/components/cases/constants";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateIST } from "@/lib/format-date";
 import { createClient } from "@/lib/supabase/server";
@@ -100,16 +101,24 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
       <Card>
         <CardHeader>
           <CardTitle>
-            {count ?? 0} case{count === 1 ? "" : "s"}
+            {count ?? 0} {count === 1 ? "entry" : "entries"}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {error ? (
             <p role="alert" className="text-sm text-destructive">
-              Could not load cases. Please try again.
+              Could not load entries. Please try again.
             </p>
           ) : !cases || cases.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No cases match these filters.</p>
+            <EmptyState
+              title="No entries found"
+              description="No entries match these filters. Try clearing a filter, or create a new entry."
+              action={
+                <Link href="/cases/new" className={buttonVariants({ size: "sm" })}>
+                  New Entry
+                </Link>
+              }
+            />
           ) : (
             <>
               <Table>
@@ -132,7 +141,7 @@ export default async function CasesPage({ searchParams }: PageProps<"/cases">) {
                           {c.file_number}
                         </Link>
                       </TableCell>
-                      <TableCell>{c.act}</TableCell>
+                      <TableCell>{c.act || "—"}</TableCell>
                       <TableCell>{c.section_id ? (sectionsById.get(c.section_id) ?? "—") : "—"}</TableCell>
                       <TableCell>
                         {c.received_from_id ? (receivedFromById.get(c.received_from_id) ?? "—") : "—"}

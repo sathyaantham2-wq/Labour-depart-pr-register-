@@ -8,7 +8,9 @@ import {
   SendIcon,
   type LucideIcon,
 } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "cn";
 import { createClient } from "@/lib/supabase/server";
 
@@ -54,7 +56,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="font-heading text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Case counts by Act and Section. Click a number to see the matching cases.
+          Entry counts by Act and Section. Click a number to see the matching entries.
         </p>
       </div>
 
@@ -63,7 +65,17 @@ export default async function DashboardPage() {
           Stats aren&apos;t available yet — check back shortly.
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No case data yet.</p>
+        <Card>
+          <EmptyState
+            title="No entries yet"
+            description="Once entries are added, counts by Act and Section will appear here."
+            action={
+              <Link href="/cases/new" className={buttonVariants({ size: "sm" })}>
+                New Entry
+              </Link>
+            }
+          />
+        </Card>
       ) : (
         <DashboardStats rows={rows} />
       )}

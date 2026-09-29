@@ -85,7 +85,7 @@ export default async function NoticeHistoryPage({ params }: PageProps<"/cases/[i
       ) : !notices || notices.length === 0 ? (
         <Card>
           <CardContent className="py-6">
-            <p className="text-sm text-muted-foreground">No notices generated for this case yet.</p>
+            <p className="text-sm text-muted-foreground">No notices generated for this entry yet.</p>
           </CardContent>
         </Card>
       ) : (

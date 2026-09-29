@@ -67,7 +67,7 @@ export function EditCaseForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Edit Case</CardTitle>
+        <CardTitle>Edit Entry</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
