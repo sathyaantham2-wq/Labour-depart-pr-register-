@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { ScaleIcon, LogOutIcon } from "lucide-react";
+import { ChatWidget } from "@/components/chatbot/chat-widget";
 import { ADMIN_NAV, NAV } from "@/components/layout/nav-items";
 import { CommandSearch } from "@/components/layout/command-search";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
@@ -53,6 +54,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
           </form>
         </header>
         <main className="flex-1 p-4 md:p-6 print:p-0">{children}</main>
+        <ChatWidget />
       </div>
     </div>
   );

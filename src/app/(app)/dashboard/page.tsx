@@ -17,7 +17,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "cn";
 import { formatLong, todayIST } from "@/lib/calendar-dates";
-import { availableYears, computeYearStats, parseYear, type YearBucket, type YearCaseRow } from "@/lib/entries/year-stats";
+import { loadYearRows } from "@/lib/entries/year-rows";
+import { availableYears, computeYearStats, parseYear, type YearBucket } from "@/lib/entries/year-stats";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -28,24 +29,6 @@ const STAT_LINKS = [
   { key: "closed", label: "Closed", status: "closed" },
   { key: "forwarded", label: "Forwarded", status: "forwarded" },
 ] as const;
-
-// All non-deleted entries, RLS-scoped: admins see everything, staff only their own.
-async function loadYearRows(supabase: Awaited<ReturnType<typeof createClient>>): Promise<YearCaseRow[] | null> {
-  const rows: YearCaseRow[] = [];
-  const PAGE = 1000;
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
-      .from("cases")
-      .select("act, section_id, status, received_date, closed_at, amount_recovered")
-      .is("deleted_at", null)
-      .order("id")
-      .range(from, from + PAGE - 1);
-    if (error || !data) return null;
-    rows.push(...(data as YearCaseRow[]));
-    if (data.length < PAGE) break;
-  }
-  return rows;
-}
 
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const sp = await searchParams;
