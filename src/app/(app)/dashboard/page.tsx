@@ -5,9 +5,11 @@ import {
   FolderKanbanIcon,
   FolderOpenIcon,
   CircleCheckIcon,
+  IndianRupeeIcon,
   SendIcon,
   type LucideIcon,
 } from "lucide-react";
+import { formatRupees } from "@/lib/format-money";
 import { AttentionPanel } from "@/components/dashboard/attention-panel";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,8 +42,35 @@ const STAT_LINKS = [
   { key: "forwarded", label: "Forwarded", status: "forwarded" },
 ] as const;
 
+type Recovered = { total: number; bySection: Map<string, number> };
+
+// Sums amount_recovered on closed entries (RLS-scoped: staff see only their own entries).
+async function loadRecovered(supabase: SupabaseClient): Promise<Recovered> {
+  const recovered: Recovered = { total: 0, bySection: new Map() };
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("cases")
+      .select("section_id, amount_recovered")
+      .eq("status", "closed")
+      .is("deleted_at", null)
+      .not("amount_recovered", "is", null)
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error || !data) break;
+    for (const row of data as { section_id: string | null; amount_recovered: number | string }[]) {
+      const amount = Number(row.amount_recovered);
+      recovered.total += amount;
+      if (row.section_id) recovered.bySection.set(row.section_id, (recovered.bySection.get(row.section_id) ?? 0) + amount);
+    }
+    if (data.length < PAGE) break;
+  }
+  return recovered;
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const recovered = await loadRecovered(supabase as unknown as SupabaseClient);
 
   // dashboard_stats may not exist yet (a parallel migration is adding it) —
   // query defensively and fall back to a friendly message instead of
@@ -102,13 +131,13 @@ export default async function DashboardPage() {
           />
         </Card>
       ) : (
-        <DashboardStats rows={rows} />
+        <DashboardStats rows={rows} recovered={recovered} />
       )}
     </div>
   );
 }
 
-function DashboardStats({ rows }: { rows: DashboardStatRow[] }) {
+function DashboardStats({ rows, recovered }: { rows: DashboardStatRow[]; recovered: Recovered }) {
   const byAct = new Map<string, DashboardStatRow[]>();
   const totals = { total: 0, open: 0, closed: 0, forwarded: 0 };
   for (const row of rows) {
@@ -129,6 +158,14 @@ function DashboardStats({ rows }: { rows: DashboardStatRow[] }) {
         <KpiCard label="Open" value={totals.open} icon={FolderOpenIcon} tone="warning" />
         <KpiCard label="Closed" value={totals.closed} icon={CircleCheckIcon} tone="success" />
         <KpiCard label="Forwarded" value={totals.forwarded} icon={SendIcon} tone="accent" />
+        <div className="sm:col-span-2 lg:col-span-4">
+          <KpiCard
+            label="Amount recovered in closed entries"
+            value={formatRupees(recovered.total)}
+            icon={IndianRupeeIcon}
+            tone="success"
+          />
+        </div>
       </div>
 
       {[...byAct.entries()].map(([act, sectionRows]) => (
@@ -143,6 +180,7 @@ function DashboardStats({ rows }: { rows: DashboardStatRow[] }) {
                 key={row.section_id ?? `${act}-${row.section_name ?? index}`}
                 row={row}
                 act={act}
+                recovered={row.section_id ? (recovered.bySection.get(row.section_id) ?? 0) : 0}
               />
             ))}
           </div>
@@ -177,7 +215,7 @@ function KpiCard({
   tone,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: LucideIcon;
   tone: keyof typeof KPI_TONE_CLASSES;
 }) {
@@ -216,7 +254,7 @@ const STAT_TONE_CLASSES: Record<string, string> = {
   forwarded: "bg-accent hover:bg-accent/70",
 };
 
-function SectionCard({ row, act }: { row: DashboardStatRow; act: string }) {
+function SectionCard({ row, act, recovered }: { row: DashboardStatRow; act: string; recovered: number }) {
   return (
     <div className="lift-3d rounded-xl">
     <Card className="h-full">
@@ -245,6 +283,12 @@ function SectionCard({ row, act }: { row: DashboardStatRow; act: string }) {
               </Link>
             );
           })}
+        </div>
+        <div className="mt-3 flex items-center justify-between rounded-lg bg-success/10 px-2.5 py-1.5 text-xs">
+          <span className="text-muted-foreground">Recovered (closed)</span>
+          <span className="font-semibold text-[color-mix(in_oklch,var(--success),black_25%)] tabular-nums dark:text-success">
+            {formatRupees(recovered)}
+          </span>
         </div>
       </CardContent>
     </Card>
